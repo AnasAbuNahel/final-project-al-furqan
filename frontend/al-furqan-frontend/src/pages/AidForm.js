@@ -11,14 +11,14 @@ const AidForm = () => {
   const [aidType, setAidType] = useState('');
   const [aidDate, setAidDate] = useState('');
   const [cashAmount, setCashAmount] = useState('');
-  const [otherAidType, setOtherAidType] = useState(''); // الحالة الجديدة لمربع النص
+  const [otherAidType, setOtherAidType] = useState(''); 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const decoded = jwtDecode(token);
-  const userRole = decoded?.role; // "admin" أو "supervisor"
+  const userRole = decoded?.role; 
 
   useEffect(() => {
-    axios.get("https://al-furqan-project-xx60.onrender.com/api/residents", {
+    axios.get("https://final-project-al-furqan.onrender.com/api/residents", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
@@ -50,7 +50,6 @@ const AidForm = () => {
       finalAidType = otherAidType;
     }
 
-    // شرط التكرار على المشرف فقط عند اختيار نوع مقترح
     if (userRole !== 'admin' && proposedAidTypes.includes(aidType)) {
       try {
         const response = await axios.get(`https://al-furqan-project-xx60.onrender.com/api/aids?resident_id=${selectedId}`, {
@@ -58,7 +57,7 @@ const AidForm = () => {
         });
 
         const existingProposedAids = response.data.filter(aid =>
-          proposedAidTypes.includes(aid.aid_type.split(' - ')[0]) // تجاهل القيمة الملحقة
+          proposedAidTypes.includes(aid.aid_type.split(' - ')[0]) 
         );
 
         if (existingProposedAids.length > 0) {
@@ -73,9 +72,8 @@ const AidForm = () => {
       }
     }
 
-    // الإرسال الفعلي
     try {
-      await axios.post('https://al-furqan-project-xx60.onrender.com/api/aids', {
+      await axios.post('https://final-project-al-furqan.onrender.com/api/aids', {
         resident_id: selectedId,
         aid_type: finalAidType,
         date: aidDate,
