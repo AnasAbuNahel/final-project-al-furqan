@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
-// إعداد القاعدة العامة لـ Axios
-axios.defaults.baseURL = "https://al-furqan-project-xx60.onrender.com";
+axios.defaults.baseURL = "https://https://final-project-al-furqan.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -57,7 +56,7 @@ const Dashboard = () => {
     const newImport = { ...importData, type: "مساعدات نقدية" };
 
     try {
-      const res = await axios.post("https://al-furqan-project-xx60.onrender.com/api/imports", newImport);
+      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", newImport);
       setImports([...imports, res.data]);
       toast.success("تم حفظ الإيراد بنجاح");
       closeModal();
@@ -71,7 +70,7 @@ const Dashboard = () => {
   const handleExportSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://al-furqan-project-xx60.onrender.com/api/exports", exportData);
+      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/exports", exportData);
       setExports([...exports, res.data]);
       toast.success("تم حفظ الصادر بنجاح");
       closeExportModal();
@@ -87,7 +86,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.");
-      navigate("/login"); // أو أي صفحة تسجيل دخول
+      navigate("/login"); 
       return;
     }
   
@@ -446,8 +445,8 @@ modalOverlay: {
   backgroundColor: "rgba(0,0,0,0.4)",
   display: "flex",
   justifyContent: "center",
-  alignItems: "flex-start", // تعديل هنا
-  paddingTop: 50,          // إضافة هذه الخاصية
+  alignItems: "flex-start", 
+  paddingTop: 50,          
   zIndex: 9999,
 },
 
