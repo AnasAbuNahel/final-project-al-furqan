@@ -18,7 +18,7 @@ const AidHistory = () => {
 
   useEffect(() => {
     axios
-      .get("https://al-furqan-project-xx60.onrender.com/api/aids", {
+      .get("https://final-project-al-furqan.onrender.com/api/aids", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -68,7 +68,6 @@ const handleImportExcel = async (event) => {
 
   const reader = new FileReader();
 
-  // التعامل مع حالة فشل القراءة
   reader.onerror = (err) => {
     console.error("فشل في قراءة الملف: ", err);
     toast.error("فشل في قراءة الملف. تأكد من أن الملف بصيغة Excel الصحيحة.");
@@ -81,23 +80,18 @@ const handleImportExcel = async (event) => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       let jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // التحقق من الأعمدة وتنسيق التواريخ
       jsonData = jsonData.map(row => {
-        // التحقق من أن "تاريخ_المساعدة" هو رقم تسلسلي في Excel وتحويله إلى تاريخ
         if (row["تاريخ_المساعدة"] && typeof row["تاريخ_المساعدة"] === "number") {
-          // تحويل الرقم التسلسلي إلى تاريخ
           row["تاريخ_المساعدة"] = XLSX.SSF.format('yyyy-mm-dd', row["تاريخ_المساعدة"]);
         }
         return row;
       });
 
-      // تحقق من الأعمدة
       if (!jsonData.length) {
         toast.warn("الملف فارغ أو التنسيق غير صحيح.");
         return;
       }
 
-      // التأكد من أن الأعمدة في الملف صحيحة
       const requiredColumns = ["الاسم", "الهوية", "نوع_المساعدة", "تاريخ_المساعدة"];
       const missingColumns = requiredColumns.filter(column => !jsonData[0].hasOwnProperty(column));
 
@@ -106,13 +100,12 @@ const handleImportExcel = async (event) => {
         return;
       }
 
-      // بقية الكود لتخزين البيانات واستيرادها كما هو
       for (const row of jsonData) {
         const { الاسم, الهوية, نوع_المساعدة, تاريخ_المساعدة } = row;
 
         try {
           const res = await axios.get(
-            `https://al-furqan-project-xx60.onrender.com/api/residents/search?name=${encodeURIComponent(الاسم)}&id=${الهوية}`,
+            `https://final-project-al-furqan.onrender.com/api/residents/search?name=${encodeURIComponent(الاسم)}&id=${الهوية}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -135,7 +128,7 @@ const handleImportExcel = async (event) => {
           }
 
           await axios.post(
-            "https://al-furqan-project-xx60.onrender.com/api/aids",
+            "https://final-project-al-furqan.onrender.com/api/aids",
             {
               resident_id: resident.id,
               aid_type: نوع_المساعدة,
@@ -151,9 +144,8 @@ const handleImportExcel = async (event) => {
         }
       }
 
-      // إعادة تحميل البيانات بعد الاستيراد
       try {
-        const res = await axios.get("https://al-furqan-project-xx60.onrender.com/api/aids", {
+        const res = await axios.get("https://final-project-al-furqan.onrender.com/api/aids", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const sortedData = res.data.sort((a, b) => {
@@ -179,7 +171,7 @@ const handleImportExcel = async (event) => {
   const handleDelete = (id) => {
     if (window.confirm("هل أنت متأكد من أنك تريد حذف هذا السجل؟")) {
       axios
-        .delete(`https://al-furqan-project-xx60.onrender.com/api/aids/${id}`, {
+        .delete(`https://final-project-al-furqan.onrender.com/api/aids/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -213,7 +205,7 @@ const handleImportExcel = async (event) => {
     };
 
     axios
-      .put(`https://al-furqan-project-xx60.onrender.com/api/aids/${currentAid.id}`, updatedAid, {
+      .put(`https://final-project-al-furqan.onrender.com/api/aids/${currentAid.id}`, updatedAid, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
