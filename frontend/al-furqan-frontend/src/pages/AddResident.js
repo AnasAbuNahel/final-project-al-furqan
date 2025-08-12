@@ -38,7 +38,7 @@ const AddResident = () => {
   const checkIfResidentExists = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://al-furqan-project-xx60.onrender.com/api/residents/check', {
+      const response = await axios.get('https://final-project-al-furqan.onrender.com/api/residents/check', {
         params: {
           husband_id_number: formData.husband_id_number,
           wife_id_number: formData.wife_id_number,
@@ -48,7 +48,7 @@ const AddResident = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      return response.data.exists; // إذا كانت القيمة true يعني أن المستفيد موجود
+      return response.data.exists; 
     } catch (error) {
       console.error('Error checking resident:', error);
       return false;
@@ -75,7 +75,6 @@ const AddResident = () => {
 
     setLoading(true);
 
-    // تحقق من وجود المستفيد
     const residentExists = await checkIfResidentExists();
     if (residentExists) {
       toast.error('❌ المستفيد موجود مسبقًا في النظام');
@@ -85,7 +84,7 @@ const AddResident = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('https://al-furqan-project-xx60.onrender.com/api/residents', formData, {
+      const response = await axios.post('https://final-project-al-furqan.onrender.com/api/residents', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -147,9 +146,9 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '100vh', // يجعل الحاوية تملأ الشاشة عموديًا
+    minHeight: '100vh', 
     boxSizing: 'border-box',
-    backgroundColor: '#f9f9f9', // لون خلفية خفيف وجميل
+    backgroundColor: '#f9f9f9', 
     flexDirection: 'column',
   },
   form: {
@@ -190,7 +189,6 @@ const styles = {
   },
 };
 
-// Media Query عبر CSS
 const responsiveStyle = `
   @media (max-width: 480px) {
     input, textarea, select, button {
