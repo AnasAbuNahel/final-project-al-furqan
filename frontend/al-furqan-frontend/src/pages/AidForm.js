@@ -52,7 +52,7 @@ const AidForm = () => {
 
     if (userRole !== 'admin' && proposedAidTypes.includes(aidType)) {
       try {
-        const response = await axios.get(`https://al-furqan-project-xx60.onrender.com/api/aids?resident_id=${selectedId}`, {
+        const response = await axios.get(`https://final-project-al-furqan.onrender.com/api/aids?resident_id=${selectedId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -86,7 +86,6 @@ const AidForm = () => {
 
       toast.success('✅ تم تسجيل المساعدة بنجاح.');
 
-      // رفع عداد الإشعارات عند النجاح
       if (window.incrementNotificationCount) {
         window.incrementNotificationCount(1);
       }
