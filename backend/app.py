@@ -28,6 +28,7 @@ class Tenant(db.Model):
     slug = db.Column(db.String(120), unique=True, nullable=False)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# مزيج لإضافة tenant_id في كل جدول
 class TenantMixin:
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenant.id'), nullable=False, index=True)
 
@@ -76,6 +77,7 @@ class User(db.Model):
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenant.id'), nullable=False)
 
     def check_password(self, password, check_fn=None):
+        # إذا كنت تستخدم werkzeug.generate_password_hash/check_password_hash في مكان آخر عدّل هنا.
         from werkzeug.security import check_password_hash
         return check_password_hash(self.password, password)
 
@@ -101,6 +103,7 @@ class Aid(db.Model, TenantMixin):
                 'husband_id_number': self.resident.husband_id_number if self.resident else None
             }
         }
+
 
 # ==================== نموذج الأطفال ====================
 class Child(db.Model, TenantMixin):
@@ -179,7 +182,7 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not hasattr(request, 'user') or request.user.get('role') != 'admin':
+        if not hasattr(request, 'user') or request.user.get('role') not in ['admin', 'user']:
             return jsonify({'error': 'صلاحيات المدير فقط'}), 403
         return f(*args, **kwargs)
     return decorated
@@ -968,6 +971,80 @@ def add_export():
     db.session.commit()
     log_action(request.user, f"إضافة صادر جديد ({new_export.description})", new_export.description)
     return jsonify(new_export.serialize()), 201
+
+    
+
+# ===================== إدارة المستخدمين =====================
+
+@app.route("/api/users", methods=["GET"])
+@login_required
+def get_users():
+    """جلب جميع المستخدمين"""
+    users = User.query.all()
+    return jsonify([{
+        "id": u.id,
+        "username": u.username,
+        "role": u.role,
+        "tenant": Tenant.query.get(u.tenant_id).name if u.tenant_id else None
+    } for u in users])
+
+
+@app.route("/api/users/create", methods=["POST"])
+@login_required
+def create_user_admin_dashboard():
+    """إضافة مستخدم جديد"""
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    tenant_name = data.get("tenant")
+    role = data.get("role", "admin")
+
+    if not username or not password or not tenant_name:
+        return jsonify({"error": "⚠️ يجب إدخال جميع البيانات"}), 400
+
+    # التأكد إذا كان المستخدم موجود
+    if User.query.filter_by(username=username, tenant_id=request.user['tenant_id']).first():
+        return jsonify({"error": "اسم المستخدم موجود بالفعل"}), 400
+
+    # البحث أو إنشاء Tenant جديد
+    tenant = Tenant.query.filter_by(name=tenant_name).first()
+    if not tenant:
+        tenant = Tenant(name=tenant_name, slug=tenant_name.lower().replace(" ", "_"))
+        db.session.add(tenant)
+        db.session.commit()
+
+    new_user = User(
+        username=username,
+        role=role,
+        tenant_id=tenant.id
+    )
+    new_user.set_password(password)
+
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({
+        "id": new_user.id,
+        "username": new_user.username,
+        "role": new_user.role,
+        "tenant": tenant.name
+    }), 201
+
+
+@app.route("/api/users/dashboard/<int:user_id>", methods=["DELETE"])
+@login_required
+def delete_user_admin_dashboard(user_id):
+    user = User.query.filter_by(id=user_id).first_or_404()
+
+
+    if user.role == 'user':
+        return jsonify({'error': 'لا يمكن حذف مستخدم بدور user'}), 400
+
+
+    username = user.username
+    db.session.delete(user)
+    db.session.commit()
+    log_action(request.user, "حذف مستخدم (من لوحة التحكم)", username)
+    return jsonify({'message': f'🗑️ تم حذف المستخدم {username} بنجاح'})
 
 
 
