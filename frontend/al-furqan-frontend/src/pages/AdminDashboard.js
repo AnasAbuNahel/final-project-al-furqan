@@ -42,7 +42,7 @@ const AdminDashboard = () => {
   };
 
   const loadUsers = () => {
-    fetchWithAuth("http://localhost:5000/api/users")
+    fetchWithAuth("https://final-project-al-furqan.onrender.com/api/users")
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "فشل في تحميل قائمة المستخدمين");
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       return addNotification("⚠️ يرجى إدخال جميع البيانات المطلوبة", false);
     }
 
-    fetchWithAuth("http://localhost:5000/api/users/create", {
+    fetchWithAuth("https://final-project-al-furqan.onrender.com/api/users/create", {
       method: "POST",
       body: JSON.stringify({ ...form, role: "admin" }),
     })
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
     console.log("Auth Token:", authToken);
     if (!window.confirm(`هل تريد بالتأكيد حذف المستخدم "${username}" ؟`)) return;
 
-    fetchWithAuth(`http://localhost:5000/api/users/dashboard/${id}`, { method: "DELETE" })
+    fetchWithAuth(`https://final-project-al-furqan.onrender.com/api/users/dashboard/${id}`, { method: "DELETE" })
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "فشل في حذف المستخدم");
@@ -244,3 +244,4 @@ const styles = {
 };
 
 export default AdminDashboard;
+
