@@ -40,18 +40,23 @@ const Login = () => {
         password,
       });
 
-      if (response.data.success && response.data.token) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('username', username);
-        localStorage.setItem('role', response.data.role);
-        localStorage.setItem('token', response.data.token);
+        if (response.data.success && response.data.token) {
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('username', username);
+          localStorage.setItem('role', response.data.role);
+          localStorage.setItem('token', response.data.token);
 
-        toast.success('✅ تم تسجيل الدخول بنجاح');
+          toast.success('✅ تم تسجيل الدخول بنجاح');
 
-        setTimeout(() => {
-          navigate('/dash');
-        }, 1500);
-      } else {
+          setTimeout(() => {
+            if (response.data.role === 'user') {
+              navigate('/admin-dashboard');
+            } else {
+              navigate('/dash');
+            }
+          }, 1500);
+        }
+       else {
         toast.error('❌ اسم المستخدم أو كلمة المرور غير صحيحة');
       }
     } catch (err) {
