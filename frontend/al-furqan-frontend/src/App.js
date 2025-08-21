@@ -6,16 +6,30 @@ import AddResident from './pages/AddResident';
 import ResidentsList from './pages/ResidentsList';
 import AidForm from './pages/AidForm';
 import AidHistory from './pages/AidHistory';
-import ChildrenRecord from './pages/ChildrenRecord';
 import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
+import ChildrenRecord from './pages/ChildrenRecord';
 import Notifications from './components/Notifications';
+import AdminDashboard from './pages/AdminDashboard';
 import { Toaster } from 'react-hot-toast';
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js') 
+      .then((registration) => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
 
 const PrivateRoute = ({ children }) => {
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-  return isLoggedIn ? children : <Navigate to="/dash"/>;
+  return isLoggedIn ? children : <Navigate to="/dash" />;
 };
 
 function App() {
@@ -29,9 +43,10 @@ function App() {
           <Route path="/residents" element={<PrivateRoute><ResidentsList /></PrivateRoute>} />
           <Route path="/aid" element={<PrivateRoute><AidForm /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><AidHistory /></PrivateRoute>} />
-          <Route path="/Child" element={<PrivateRoute><ChildrenRecord /></PrivateRoute>} />
+          <Route path="/Children" element={<PrivateRoute><ChildrenRecord /></PrivateRoute>} />
           <Route path="/stats" element={<PrivateRoute><Statistics /></PrivateRoute>} />
           <Route path="/dash" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/settings" element={<PrivateRoute><Settings /><Toaster position="top-center" reverseOrder={false} /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
         </Routes>
