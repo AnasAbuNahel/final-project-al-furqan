@@ -43,7 +43,7 @@ function App() {
           <Route path="/residents" element={<PrivateRoute><ResidentsList /></PrivateRoute>} />
           <Route path="/aid" element={<PrivateRoute><AidForm /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><AidHistory /></PrivateRoute>} />
-          <Route path="/Children" element={<PrivateRoute><ChildrenRecord /></PrivateRoute>} />
+          <Route path="/Child" element={<PrivateRoute><ChildrenRecord /></PrivateRoute>} />
           <Route path="/stats" element={<PrivateRoute><Statistics /></PrivateRoute>} />
           <Route path="/dash" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
