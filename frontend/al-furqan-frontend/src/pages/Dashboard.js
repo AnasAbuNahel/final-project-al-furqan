@@ -92,12 +92,12 @@ const Dashboard = () => {
   
     try {
       const [importRes, exportRes] = await Promise.all([
-        axios.get("/api/imports", {
+        axios.get("https://final-project-al-furqan.onrender.com/api/imports", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }),
-        axios.get("/api/exports", {
+        axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
