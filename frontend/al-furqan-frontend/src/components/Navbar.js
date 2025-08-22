@@ -23,37 +23,46 @@ const Navbar = () => {
     setNotifications(storedNotifications);
   }, []);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch("https://final-project-al-furqan.onrender.com/api/notifications", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-
-        setNotifications(data);
-
-        const newCount = data.filter(n => n.isNew).length;
-
-        if (location.pathname === '/notifications') {
-          setNotificationCount(0);
-          localStorage.setItem('notificationCount', '0');
-        } else {
-          setNotificationCount(newCount);
-          localStorage.setItem('notificationCount', newCount.toString());
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch("https://final-project-al-furqan.onrender.com/api/notifications", {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
+      });
+      const data = await res.json();
 
-        localStorage.setItem('notifications', JSON.stringify(data));
-      } catch (err) {
-        console.error("فشل تحميل الإشعارات:", err);
+      setNotifications(data);
+
+      // حساب عدد الإشعارات الجديدة
+      const newCount = data.filter(n => n.isNew).length;
+
+      if (location.pathname === '/notifications') {
+        // لو المستخدم في صفحة الإشعارات نعيد العداد للصفر
+        setNotificationCount(0);
+        localStorage.setItem('notificationCount', '0');
+      } else {
+        // لو في إشعارات جديدة نزود العدد
+        setNotificationCount(newCount);
+        localStorage.setItem('notificationCount', newCount.toString());
       }
-    };
 
-    fetchNotifications();
-  }, [location.pathname]);
+      localStorage.setItem('notifications', JSON.stringify(data));
+    } catch (err) {
+      console.error("فشل تحميل الإشعارات:", err);
+    }
+  };
+
+  fetchNotifications();
+
+  // تحديث كل 30 ثانية مثلاً
+  const interval = setInterval(fetchNotifications, 30000);
+  return () => clearInterval(interval);
+
+}, [location.pathname]);
+
 
   const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
