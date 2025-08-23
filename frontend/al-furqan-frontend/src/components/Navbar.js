@@ -28,40 +28,35 @@ const Navbar = () => {
   }, []);
 
   // جلب الإشعارات من السيرفر
-useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetchWithAuth("https://final-project-al-furqan.onrender.com/api/notifications");
-      if (!res.ok) throw new Error("فشل جلب الإشعارات");
-
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch("https://final-project-al-furqan.onrender.com/api/notifications", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
         setNotifications(data);
-        const newCount = data.length;
+        const newCount = data.filter(n => n.is_new).length;
 
-        if (location.pathname === "/notifications") {
+        if (location.pathname === '/notifications') {
           setNotificationCount(0);
-          localStorage.setItem("notificationCount", "0");
+          localStorage.setItem('notificationCount', '0');
+          await fetch("https://final-project-al-furqan.onrender.com/api/notifications/mark-read", { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         } else {
           setNotificationCount(newCount);
-          localStorage.setItem("notificationCount", newCount.toString());
+          localStorage.setItem('notificationCount', newCount.toString());
         }
 
-        localStorage.setItem("notifications", JSON.stringify(data));
-      } else {
-        setNotifications([]);
-        setNotificationCount(0);
+        localStorage.setItem('notifications', JSON.stringify(data));
+      } catch (err) {
+        console.error("فشل تحميل الإشعارات:", err);
       }
-    } catch (err) {
-      console.error("فشل تحميل الإشعارات:", err);
-    }
-  };
-
-  fetchNotifications();
-  const interval = setInterval(fetchNotifications, 10000);
-  return () => clearInterval(interval);
-}, [location.pathname]);
+    };
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 1000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   // إغلاق القوائم عند الضغط خارجها
   useEffect(() => {
