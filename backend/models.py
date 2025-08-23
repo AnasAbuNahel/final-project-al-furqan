@@ -113,6 +113,7 @@ class Notification(db.Model, TenantMixin):
     username = db.Column(db.String(80), nullable=False)
     action = db.Column(db.String(300), nullable=False)
     target_name = db.Column(db.String(100), nullable=True)
+    is_new = db.Column(db.Boolean, default=True)  
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def serialize(self):
@@ -124,6 +125,7 @@ class Notification(db.Model, TenantMixin):
             "target_name": self.target_name,
             "timestamp": self.timestamp.isoformat(),
             "tenant_id": self.tenant_id,
+            "is_new": self.is_new,  
         }
 
 
