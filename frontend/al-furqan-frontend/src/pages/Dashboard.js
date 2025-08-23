@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
-axios.defaults.baseURL = "https://https://final-project-al-furqan.onrender.com";
+// إعداد القاعدة العامة لـ Axios
+axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -86,10 +87,10 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.");
-      navigate("/login"); 
+      navigate("/login"); // أو أي صفحة تسجيل دخول
       return;
     }
-  
+
     try {
       const [importRes, exportRes] = await Promise.all([
         axios.get("https://final-project-al-furqan.onrender.com/api/imports", {
@@ -97,7 +98,7 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
           },
         }),
-        axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
+        axios.get("http://localhost:5000/api/exports", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -446,7 +447,7 @@ modalOverlay: {
   display: "flex",
   justifyContent: "center",
   alignItems: "flex-start", 
-  paddingTop: 50,          
+  paddingTop: 50,         
   zIndex: 9999,
 },
 
@@ -482,7 +483,7 @@ buttonRow: {
   display: "flex",
   justifyContent: "flex-start",
   marginTop: 20,
-  gap: 15, // لإضافة مسافة بين الزرين
+  gap: 15, 
 },
 
 };
