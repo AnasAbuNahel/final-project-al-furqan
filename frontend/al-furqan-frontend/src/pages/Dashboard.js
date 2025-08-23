@@ -56,7 +56,7 @@ const Dashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newImport = { ...importData, type: "مساعدات نقدية" };
+    const newImport = { ...importData };
 
     try {
       const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", newImport);
