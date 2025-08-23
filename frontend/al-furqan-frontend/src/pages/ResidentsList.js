@@ -330,10 +330,10 @@ const ResidentsList = () => {
       <select
         value={damageFilterValue}
         onChange={(e) => setDamageFilterValue(e.target.value)}
-        style={styles.select}
-      >
+        style={styles.select}>
         <option value="">الكل</option>
         <option value="طفيف">طفيف</option>
+        <option value="سليم">سليم</option>
         <option value="جزئي بليغ">جزئي بليغ</option>
         <option value="كلي">كلي</option>
       </select>
