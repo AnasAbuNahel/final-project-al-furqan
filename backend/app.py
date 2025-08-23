@@ -12,7 +12,7 @@ import pandas as pd
 import pytz
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["https://vercel.com/anasabunahels-projects/final-project-al-furqan"])
+CORS(app, supports_credentials=True, origins=["https://final-project-al-furqan.vercel.app/"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://db_al_furqan_final_project_user:i8nLtHzu95NBWsLngEBFLHxOpUCpvY4q@dpg-d2ds0dq4d50c73bj3kfg-a/db_al_furqan_final_project'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
