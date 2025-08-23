@@ -682,7 +682,7 @@ def importt_excel():
     }), 200
 
 @app.route('/api/residents/search', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["https://final-project-al-furqan.vercel.app/"], supports_credentials=True)
+@cross_origin(origins=["https://final-project-al-furqan.vercel.app"], supports_credentials=True)
 @login_required
 def search_resident_by_name_and_id():
     name = request.args.get('name')
