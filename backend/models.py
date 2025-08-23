@@ -128,7 +128,6 @@ class Notification(db.Model, TenantMixin):
             "is_new": self.is_new,  
         }
 
-
 # ---------- Import model ----------
 class Import(db.Model, TenantMixin):
     id = db.Column(db.Integer, primary_key=True)
