@@ -12,7 +12,7 @@ import pandas as pd
 import pytz
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["https://final-project-al-furqan.vercel.app"])
+CORS(app, supports_credentials=True, origins=["https://vercel.com/anasabunahels-projects/final-project-al-furqan"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://db_al_furqan_final_project_user:i8nLtHzu95NBWsLngEBFLHxOpUCpvY4q@dpg-d2ds0dq4d50c73bj3kfg-a/db_al_furqan_final_project'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -682,7 +682,7 @@ def importt_excel():
     }), 200
 
 @app.route('/api/residents/search', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["https://vercel.com/anasabunahels-projects/final-project-al-furqan"], supports_credentials=True)
 @login_required
 def search_resident_by_name_and_id():
     name = request.args.get('name')
@@ -788,7 +788,9 @@ def import_excel():
     file = request.files['file']
 
     try:
-        df = pd.read_excel(file)
+        df = pd.read_excel(file, dtype=str)  # إجبار كل القيم تكون نصوص
+        df = df.fillna('')  
+
 
         field_map = {
             'اسم الزوج': 'husband_name',
@@ -1068,5 +1070,3 @@ def delete_user_admin_dashboard(user_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
