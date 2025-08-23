@@ -418,7 +418,7 @@ class Notification(db.Model):
     username = db.Column(db.String(80), nullable=False)
     action = db.Column(db.String(300), nullable=False)
     target_name = db.Column(db.String(100), nullable=True)
-    is_new = db.Column(db.Boolean, default=True)  
+    is_new = db.Column(db.Boolean, default=True)  # <-- حقل جديد للإشعارات الجديدة
     timestamp = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(pytz.timezone('Asia/Gaza'))
@@ -432,7 +432,7 @@ class Notification(db.Model):
             'username': self.username,
             'action': self.action,
             'target_name': self.target_name,
-            'is_new': self.is_new,  
+            'is_new': self.is_new,  # نضيفه هنا أيضًا
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
 
@@ -445,7 +445,7 @@ def log_action(user_info, action, target_name=None):
             username=user_info['username'],
             action=action,
             target_name=target_name,
-            is_new=True  
+            is_new=True  # كل إشعار جديد يبدأ كـ "جديد"
         )
         db.session.add(notification)
         db.session.commit()
@@ -765,6 +765,7 @@ def mark_notifications_read():
     db.session.commit()
     return jsonify({"success": True})
 
+
 # ====== تحميل وتصدير المستفيدين ======
 @app.route('/api/export_residents', methods=['GET'])
 @login_required
@@ -1065,6 +1066,6 @@ def delete_user_admin_dashboard(user_id):
 
 
 
-# ====== نقطة بداية ======
 if __name__ == '__main__':
     app.run(debug=True)
+
