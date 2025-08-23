@@ -418,6 +418,7 @@ class Notification(db.Model):
     username = db.Column(db.String(80), nullable=False)
     action = db.Column(db.String(300), nullable=False)
     target_name = db.Column(db.String(100), nullable=True)
+    is_new = db.Column(db.Boolean, default=True)  
     timestamp = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(pytz.timezone('Asia/Gaza'))
@@ -431,8 +432,10 @@ class Notification(db.Model):
             'username': self.username,
             'action': self.action,
             'target_name': self.target_name,
+            'is_new': self.is_new,  
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
+
 
 def log_action(user_info, action, target_name=None):
     try:
@@ -441,7 +444,8 @@ def log_action(user_info, action, target_name=None):
             user_id=user_info['user_id'],
             username=user_info['username'],
             action=action,
-            target_name=target_name
+            target_name=target_name,
+            is_new=True  
         )
         db.session.add(notification)
         db.session.commit()
@@ -735,18 +739,31 @@ def delete_aid(aid_id):
 @app.route('/api/notifications', methods=['GET'])
 @login_required
 def get_notifications():
-    # استخدم نفس المنطقة الزمنية كما في الافتراضي عند الإدراج
     week_ago = datetime.now(pytz.timezone('Asia/Gaza')) - timedelta(days=7)
 
-    # حذف الإشعارات الأقدم من 7 أيام لجهة المستخدم فقط
-    stmt = delete(Notification).where(Notification.timestamp < week_ago).where(Notification.tenant_id == request.user['tenant_id'])
+    # حذف الإشعارات الأقدم من 7 أيام
+    stmt = delete(Notification).where(Notification.timestamp < week_ago)\
+                               .where(Notification.tenant_id == request.user['tenant_id'])
     db.session.execute(stmt)
     db.session.commit()
 
+    # جلب آخر 100 إشعار
     notifications = Notification.query.filter_by(
         tenant_id=request.user['tenant_id']
     ).order_by(Notification.timestamp.desc()).limit(100).all()
+
     return jsonify([n.serialize() for n in notifications])
+
+
+@app.route('/api/notifications/mark-read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    Notification.query.filter_by(
+        tenant_id=request.user['tenant_id'],
+        is_new=True
+    ).update({"is_new": False})
+    db.session.commit()
+    return jsonify({"success": True})
 
 # ====== تحميل وتصدير المستفيدين ======
 @app.route('/api/export_residents', methods=['GET'])
