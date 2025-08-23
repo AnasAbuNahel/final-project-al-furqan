@@ -16,6 +16,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // جلب الإشعارات من localStorage عند البداية
   useEffect(() => {
     const storedCount = parseInt(localStorage.getItem('notificationCount')) || 0;
     setNotificationCount(storedCount);
@@ -23,6 +24,7 @@ const Navbar = () => {
     setNotifications(storedNotifications);
   }, []);
 
+  // جلب الإشعارات من السيرفر
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -36,12 +38,14 @@ const Navbar = () => {
 
         setNotifications(data);
 
+        // حساب عدد الإشعارات الجديدة
         const newCount = data.filter(n => n.is_new).length;
 
         if (location.pathname === '/notifications') {
           setNotificationCount(0);
           localStorage.setItem('notificationCount', '0');
 
+          // تعليم جميع الإشعارات كمقروءة
           await fetch("http://localhost:5000/api/notifications/mark-read", {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -59,6 +63,7 @@ const Navbar = () => {
 
     fetchNotifications();
 
+    // تحديث كل 30 ثانية
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [location.pathname]);
