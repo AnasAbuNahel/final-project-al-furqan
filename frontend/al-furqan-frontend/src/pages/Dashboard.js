@@ -203,7 +203,7 @@ const Dashboard = () => {
                 {[
                   { label: "الجهة الموردة", key: "source", type: "select" },
                   { label: "اسم المورد", key: "name", type: "text" },
-                  { label: "تاريخ الإيراد", key: "date", type: "date" },
+                  { label: "نوع الايراد", key: "type", type: "text", readOnly: true, value: "مساعدات نقدية" },
                   { label: "نوع الايراد", key: "type", type: "text" },
                   { label: "الكمية", key: "amount", type: "number" }
                 ].map((field, idx) => (
