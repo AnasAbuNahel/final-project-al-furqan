@@ -5,7 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
 // إعداد القاعدة العامة لـ Axios
-axios.defaults.baseURL = "http://localhost:5000";
+axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -31,7 +31,9 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  const totalImports = imports.reduce((sum, imp) => sum + parseFloat(imp.amount || 0), 0);
+  const totalImports = imports
+  .filter(imp => imp.type === "مساعدات نقدية") 
+  .reduce((sum, imp) => sum + parseFloat(imp.amount || 0), 0);
   const totalExports = exports.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
   const totalExpenses = totalImports - totalExports;
 
