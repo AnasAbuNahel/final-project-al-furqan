@@ -5,7 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
 // إعداد القاعدة العامة لـ Axios
-axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
+axios.defaults.baseURL = "http://localhost:5000";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -19,7 +19,7 @@ const Dashboard = () => {
     source: '',
     name: '',
     date: '',
-    type: '',
+    type: '', 
     amount: ''
   });
 
@@ -98,7 +98,7 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
           },
         }),
-        axios.get("http://localhost:5000/api/exports", {
+        axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -204,7 +204,7 @@ const Dashboard = () => {
                   { label: "الجهة الموردة", key: "source", type: "select" },
                   { label: "اسم المورد", key: "name", type: "text" },
                   { label: "تاريخ الإيراد", key: "date", type: "date" },
-                  { label: "نوع الايراد", key: "type", type: "text", readOnly: true, value: "مساعدات نقدية" }, 
+                  { label: "نوع الايراد", key: "type", type: "text" },
                   { label: "الكمية", key: "amount", type: "number" }
                 ].map((field, idx) => (
                   <div key={idx} style={{ marginBottom: 15 }}>
