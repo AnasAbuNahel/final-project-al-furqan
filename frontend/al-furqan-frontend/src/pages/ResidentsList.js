@@ -21,12 +21,14 @@ const ResidentsList = () => {
   const [damageFilterValue, setDamageFilterValue] = useState('');
   const [delegateFilterValue, setDelegateFilterValue] = useState('');
   const [aidFilterValue, setAidFilterValue] = useState('');
+  const [residenceFilterValue, setResidenceFilterValue] = useState('');
 
   // تحكم في نوافذ التصفية
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [showDamageFilterPopup, setShowDamageFilterPopup] = useState(false);
   const [showDelegateFilterPopup, setShowDelegateFilterPopup] = useState(false);
   const [showAidFilterPopup, setShowAidFilterPopup] = useState(false);
+  const [showResidenceFilterPopup, setShowResidenceFilterPopup] = useState(false);
 
   useEffect(() => {
     fetchResidents();
@@ -57,7 +59,7 @@ const ResidentsList = () => {
 
   useEffect(() => {
     applyAllFilters();
-  }, [searchTerm, filterOperator, filterValue, damageFilterValue, delegateFilterValue, aidFilterValue]);
+  }, [searchTerm, filterOperator, filterValue, damageFilterValue, delegateFilterValue, aidFilterValue, residenceFilterValue]);
 
   const applyAllFilters = () => {
     let filtered = [...residents];
@@ -93,8 +95,13 @@ const ResidentsList = () => {
       );
     }
 
+    if (residenceFilterValue) {
+      filtered = filtered.filter((r) => r.residence_status === residenceFilterValue);
+    }
+
     setFilteredResidents(filtered);
   };
+
   const handleSearch = (e) => setSearchTerm(e.target.value);
 
   const handleChange = (e) => {
@@ -170,11 +177,11 @@ const ResidentsList = () => {
       });
   };
 
-    const isInvalidId = (id) => {
+  const isInvalidId = (id) => {
     return !id || id.length !== 9 || !/^[0-9]{9}$/.test(id);
   };
 
-    const isInvalidField = (val) => {
+  const isInvalidField = (val) => {
     if (val === null || val === undefined) return true;
     const stringVal = String(val).trim();
     return stringVal === '' || stringVal === '—' || stringVal.includes('_');
@@ -194,6 +201,7 @@ const ResidentsList = () => {
       )}
     </div>
   );
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>🔹 كشف بيانات حي الفرقان</h2>
@@ -230,6 +238,7 @@ const ResidentsList = () => {
                     <th onClick={() => setShowFilterPopup(true)} style={styles.clickableHeader}>عدد الأفراد 🔽</th>
                     <th onClick={() => setShowDamageFilterPopup(true)} style={styles.clickableHeader}>الضرر 🔽</th>
                     <th onClick={() => setShowDelegateFilterPopup(true)} style={styles.clickableHeader}>المندوب 🔽</th>
+                    <th onClick={() => setShowResidenceFilterPopup(true)} style={styles.clickableHeader}>حالة الإقامة 🔽</th>
                     <th onClick={() => setShowAidFilterPopup(true)} style={styles.clickableHeader}>الاستفادة 🔽</th>
                     <th>الإجراءات</th>
                   </tr>
@@ -238,27 +247,28 @@ const ResidentsList = () => {
                   {filteredResidents.map((res, index) => (
                     <tr key={res.id} style={styles.tableRow}>
                       <td>{index + 1}</td>
-                    <td style={isInvalidField(res.husband_name) ? styles.invalidCell : null}>
-                      {res.husband_name || '—'}
-                    </td>
-                    <td style={isInvalidId(res.husband_id_number) ? styles.invalidCell : null}>
-                      {res.husband_id_number || '—'}
-                    </td>
-                    <td style={isInvalidField(res.num_family_members) ? styles.invalidCell : null}>
-                      {res.num_family_members || '—'}
-                    </td>
-                    <td style={isInvalidField(res.damage_level) ? styles.invalidCell : null}>
-                      {res.damage_level || '—'}
-                    </td>
-                    <td style={isInvalidField(res.neighborhood) ? styles.invalidCell : null}>
-                      {res.neighborhood || '—'}
-                    </td>
-                    <td>{res.has_received_aid ? '✅' : '❌'}</td>
-                    <td>
-                      <button onClick={() => openDetails(res, false)} style={styles.btnDetails}>تفاصيل</button>
-                      <button onClick={() => openDetails(res, true)} style={styles.btnEdit}>تعديل</button>
-                      <button onClick={() => handleDelete(res.id)} style={styles.btnDelete}>حذف</button>
-                    </td>
+                      <td style={isInvalidField(res.husband_name) ? styles.invalidCell : null}>
+                        {res.husband_name || '—'}
+                      </td>
+                      <td style={isInvalidId(res.husband_id_number) ? styles.invalidCell : null}>
+                        {res.husband_id_number || '—'}
+                      </td>
+                      <td style={isInvalidField(res.num_family_members) ? styles.invalidCell : null}>
+                        {res.num_family_members || '—'}
+                      </td>
+                      <td style={isInvalidField(res.damage_level) ? styles.invalidCell : null}>
+                        {res.damage_level || '—'}
+                      </td>
+                      <td style={isInvalidField(res.neighborhood) ? styles.invalidCell : null}>
+                        {res.neighborhood || '—'}
+                      </td>
+                      <td>{res.residence_status || '—'}</td>
+                      <td>{res.has_received_aid ? '✅' : '❌'}</td>
+                      <td>
+                        <button onClick={() => openDetails(res, false)} style={styles.btnDetails}>تفاصيل</button>
+                        <button onClick={() => openDetails(res, true)} style={styles.btnEdit}>تعديل</button>
+                        <button onClick={() => handleDelete(res.id)} style={styles.btnDelete}>حذف</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -284,6 +294,26 @@ const ResidentsList = () => {
             {renderField('الأمراض', 'diseases')}
             {renderField('الضرر', 'damage_level')}
             {renderField('المندوب', 'neighborhood')}
+
+            {/* حقل حالة الإقامة */}
+            <div style={styles.modalField}>
+              <label style={styles.modalLabel}>حالة الإقامة:</label>
+              {isEditMode ? (
+                <select
+                  name="residence_status"
+                  value={formData.residence_status || ''}
+                  onChange={handleChange}
+                  style={styles.modalInput}
+                >
+                  <option value="">—</option>
+                  <option value="مقيم">مقيم</option>
+                  <option value="نازح">نازح</option>
+                </select>
+              ) : (
+                <div style={styles.modalValue}>{selectedResident.residence_status || '—'}</div>
+              )}
+            </div>
+
             {renderField('ملاحظات', 'notes', true)}
             <div style={styles.modalButtons}>
               {isEditMode && <button onClick={handleSave} style={styles.btnSave}>💾 حفظ</button>}
@@ -294,104 +324,131 @@ const ResidentsList = () => {
       )}
 
       <ToastContainer />
+
+      {/* Popup تصفية حسب عدد الأفراد */}
       {showFilterPopup && (
-  <div style={styles.popupOverlay}>
-    <div style={styles.popupBox}>
-      <h3 style={styles.popupTitle}>تصفية حسب عدد الأفراد</h3>
-      <select
-        value={filterOperator}
-        onChange={(e) => setFilterOperator(e.target.value)}
-        style={styles.select}
-      >
-        <option value="">اختر شرط التصفية</option>
-        <option value=">">أكبر من</option>
-        <option value="<">أصغر من</option>
-        <option value="=">يساوي</option>
-      </select>
-      <input
-        type="number"
-        value={filterValue}
-        onChange={(e) => setFilterValue(e.target.value)}
-        placeholder="أدخل العدد"
-        style={styles.input}
-      />
-      <div style={styles.popupButtons}>
-        <button onClick={() => setShowFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
-        <button onClick={() => { setFilterOperator(''); setFilterValue(''); setShowFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
-      </div>
-    </div>
-  </div>
-)}
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupBox}>
+            <h3 style={styles.popupTitle}>تصفية حسب عدد الأفراد</h3>
+            <select
+              value={filterOperator}
+              onChange={(e) => setFilterOperator(e.target.value)}
+              style={styles.select}
+            >
+              <option value="">اختر شرط التصفية</option>
+              <option value=">">أكبر من</option>
+              <option value="<">أصغر من</option>
+              <option value="=">يساوي</option>
+            </select>
+            <input
+              type="number"
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+              placeholder="أدخل العدد"
+              style={styles.input}
+            />
+            <div style={styles.popupButtons}>
+              <button onClick={() => setShowFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
+              <button onClick={() => { setFilterOperator(''); setFilterValue(''); setShowFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-{showDamageFilterPopup && (
-  <div style={styles.popupOverlay}>
-    <div style={styles.popupBox}>
-      <h3 style={styles.popupTitle}>تصفية حسب الضرر</h3>
-      <select
-        value={damageFilterValue}
-        onChange={(e) => setDamageFilterValue(e.target.value)}
-        style={styles.select}>
-        <option value="">الكل</option>
-        <option value="طفيف">طفيف</option>
-        <option value="سليم">سليم</option>
-        <option value="جزئي بليغ">جزئي بليغ</option>
-        <option value="كلي">كلي</option>
-      </select>
-      <div style={styles.popupButtons}>
-        <button onClick={() => setShowDamageFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
-        <button onClick={() => { setDamageFilterValue(''); setShowDamageFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Popup تصفية حسب الضرر */}
+      {showDamageFilterPopup && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupBox}>
+            <h3 style={styles.popupTitle}>تصفية حسب الضرر</h3>
+            <select
+              value={damageFilterValue}
+              onChange={(e) => setDamageFilterValue(e.target.value)}
+              style={styles.select}>
+              <option value="">الكل</option>
+              <option value="طفيف">طفيف</option>
+              <option value="سليم">سليم</option>
+              <option value="جزئي بليغ">جزئي بليغ</option>
+              <option value="كلي">كلي</option>
+            </select>
+            <div style={styles.popupButtons}>
+              <button onClick={() => setShowDamageFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
+              <button onClick={() => { setDamageFilterValue(''); setShowDamageFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-{showDelegateFilterPopup && (
-  <div style={styles.popupOverlay}>
-    <div style={styles.popupBox}>
-      <h3 style={styles.popupTitle}>تصفية حسب اسم المندوب</h3>
-      <select
-        value={delegateFilterValue}
-        onChange={(e) => {
-          setDelegateFilterValue(e.target.value);
-          setShowDelegateFilterPopup(false); 
-        }}
-        style={styles.select}
-      >
-        <option value="">كل المناديب</option>
-        {Array.from(new Set(residents.map((r) => r.neighborhood).filter(Boolean))).map((delegate, idx) => (
-          <option key={idx} value={delegate}>
-            {delegate}
-          </option>
-        ))}
-      </select>
-      <div style={styles.popupButtons}>
-        <button onClick={() => setShowDelegateFilterPopup(false)} style={styles.popupApply}>إغلاق</button>
-        <button onClick={() => { setDelegateFilterValue(''); setShowDelegateFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Popup تصفية حسب المندوب */}
+      {showDelegateFilterPopup && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupBox}>
+            <h3 style={styles.popupTitle}>تصفية حسب اسم المندوب</h3>
+            <select
+              value={delegateFilterValue}
+              onChange={(e) => {
+                setDelegateFilterValue(e.target.value);
+                setShowDelegateFilterPopup(false); 
+              }}
+              style={styles.select}
+            >
+              <option value="">كل المناديب</option>
+              {Array.from(new Set(residents.map((r) => r.neighborhood).filter(Boolean))).map((delegate, idx) => (
+                <option key={idx} value={delegate}>
+                  {delegate}
+                </option>
+              ))}
+            </select>
+            <div style={styles.popupButtons}>
+              <button onClick={() => setShowDelegateFilterPopup(false)} style={styles.popupApply}>إغلاق</button>
+              <button onClick={() => { setDelegateFilterValue(''); setShowDelegateFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-{showAidFilterPopup && (
-  <div style={styles.popupOverlay}>
-    <div style={styles.popupBox}>
-      <h3 style={styles.popupTitle}>تصفية حسب حالة الاستفادة</h3>
-      <select
-        value={aidFilterValue}
-        onChange={(e) => setAidFilterValue(e.target.value)}
-        style={styles.select}
-      >
-        <option value="">الكل</option>
-        <option value="received">استفاد</option>
-        <option value="not_received">لم يستفد</option>
-      </select>
-      <div style={styles.popupButtons}>
-        <button onClick={() => setShowAidFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
-        <button onClick={() => { setAidFilterValue(''); setShowAidFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Popup تصفية حسب الاستفادة */}
+      {showAidFilterPopup && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupBox}>
+            <h3 style={styles.popupTitle}>تصفية حسب حالة الاستفادة</h3>
+            <select
+              value={aidFilterValue}
+              onChange={(e) => setAidFilterValue(e.target.value)}
+              style={styles.select}
+            >
+              <option value="">الكل</option>
+              <option value="received">استفاد</option>
+              <option value="not_received">لم يستفد</option>
+            </select>
+            <div style={styles.popupButtons}>
+              <button onClick={() => setShowAidFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
+              <button onClick={() => { setAidFilterValue(''); setShowAidFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup تصفية حسب حالة الإقامة */}
+      {showResidenceFilterPopup && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupBox}>
+            <h3 style={styles.popupTitle}>تصفية حسب حالة الإقامة</h3>
+            <select
+              value={residenceFilterValue}
+              onChange={(e) => setResidenceFilterValue(e.target.value)}
+              style={styles.select}
+            >
+              <option value="">الكل</option>
+              <option value="مقيم">مقيم</option>
+              <option value="نازح">نازح</option>
+            </select>
+            <div style={styles.popupButtons}>
+              <button onClick={() => setShowResidenceFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
+              <button onClick={() => { setResidenceFilterValue(''); setShowResidenceFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
