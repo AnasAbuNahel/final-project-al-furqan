@@ -62,7 +62,7 @@ class Resident(db.Model, TenantMixin):
     neighborhood = db.Column(db.String(200), nullable=True)
     notes = db.Column(db.String(300), nullable=True)
     has_received_aid = db.Column(db.Boolean, default=False)
-
+    residence_status = db.Column(db.String(20), nullable=True)  
     aids = db.relationship("Aid", backref="resident", lazy=True, cascade="all, delete-orphan")
 
     def serialize(self):
@@ -80,6 +80,7 @@ class Resident(db.Model, TenantMixin):
             "neighborhood": self.neighborhood,
             "notes": self.notes,
             "has_received_aid": self.has_received_aid,
+            "residence_status": self.residence_status,  
             "tenant_id": self.tenant_id,
             "aid_history": [aid.serialize() for aid in self.aids],
         }
