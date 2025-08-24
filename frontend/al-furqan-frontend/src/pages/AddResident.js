@@ -16,9 +16,10 @@ const AddResident = () => {
     num_family_members: '',
     injuries: '',
     diseases: '',
-    damage_level: '',  
+    damage_level: '',
     neighborhood: '',
     notes: '',
+    residence_status: '', // 👈 جديد
   });
 
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,6 @@ const AddResident = () => {
     return /^05[69]\d{7}$/.test(phone_number);
   };
 
-  // دالة للتحقق من وجود المستفيد
   const checkIfResidentExists = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -48,7 +48,7 @@ const AddResident = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      return response.data.exists; 
+      return response.data.exists;
     } catch (error) {
       console.error('Error checking resident:', error);
       return false;
@@ -73,6 +73,11 @@ const AddResident = () => {
       return;
     }
 
+    if (!formData.residence_status) {
+      toast.error('❌ يرجى اختيار حالة الإقامة');
+      return;
+    }
+
     setLoading(true);
 
     const residentExists = await checkIfResidentExists();
@@ -84,7 +89,7 @@ const AddResident = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('https://final-project-al-furqan.onrender.com/api/residents', formData, {
+      await axios.post('https://final-project-al-furqan.onrender.com/api/residents', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -118,6 +123,14 @@ const AddResident = () => {
         <input type="number" name="num_family_members" placeholder="عدد أفراد الأسرة" value={formData.num_family_members} onChange={handleChange} required style={styles.input} />
         <input type="text" name="injuries" placeholder="الإصابات إن وجدت" value={formData.injuries} onChange={handleChange} style={styles.input} />
         <input type="text" name="diseases" placeholder="الأمراض إن وجدت" value={formData.diseases} onChange={handleChange} style={styles.input} />
+
+        {/* 👇 حقل جديد لحالة الإقامة */}
+        <select name="residence_status" value={formData.residence_status} onChange={handleChange} required style={styles.input}>
+          <option value="">اختر حالة الإقامة</option>
+          <option value="مقيم">مقيم</option>
+          <option value="نازح">نازح</option>
+        </select>
+
         <select name="damage_level" value={formData.damage_level} onChange={handleChange} required style={styles.input}>
           <option value="">اختر نوع الضرر</option>
           <option value="كلي">كلي</option>
@@ -125,8 +138,10 @@ const AddResident = () => {
           <option value="جزئي">طفيف</option>
           <option value="لا يوجد ضرر">لا يوجد ضرر</option>
         </select>
+
         <input type="text" name="neighborhood" placeholder="المندوب" value={formData.neighborhood} onChange={handleChange} required style={styles.input} />
         <textarea name="notes" placeholder="ملاحظات (اختياري)" value={formData.notes} onChange={handleChange} style={{ ...styles.input, height: '80px' }}></textarea>
+
         <button type="submit" style={styles.button} disabled={loading}>
           {loading ? 'جارٍ الإضافة...' : 'إضافة'}
         </button>
@@ -146,9 +161,9 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '100vh', 
+    minHeight: '100vh',
     boxSizing: 'border-box',
-    backgroundColor: '#f9f9f9', 
+    backgroundColor: '#f9f9f9',
     flexDirection: 'column',
   },
   form: {
