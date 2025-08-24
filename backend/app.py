@@ -47,7 +47,7 @@ class Resident(db.Model, TenantMixin):
     neighborhood = db.Column(db.String(200), nullable=True)
     notes = db.Column(db.String(300), nullable=True)
     has_received_aid = db.Column(db.Boolean, default=False)
-
+    residence_status = db.Column(db.String(20), nullable=True)  
     aids = db.relationship('Aid', backref='resident', lazy=True)
 
     def serialize(self):
@@ -65,8 +65,10 @@ class Resident(db.Model, TenantMixin):
             'neighborhood': self.neighborhood,
             'notes': self.notes,
             'has_received_aid': self.has_received_aid,
+            'residence_status': self.residence_status,  
             'tenant_id': self.tenant_id
         }
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -747,10 +749,10 @@ def get_notifications():
     db.session.execute(stmt)
     db.session.commit()
 
-    # جلب آخر 100 إشعار
+    # جلب آخر 5000 إشعار
     notifications = Notification.query.filter_by(
         tenant_id=request.user['tenant_id']
-    ).order_by(Notification.timestamp.desc()).limit(100).all()
+    ).order_by(Notification.timestamp.desc()).limit(5000).all()
 
     return jsonify([n.serialize() for n in notifications])
 
@@ -785,12 +787,12 @@ def import_excel():
     if 'file' not in request.files:
         return jsonify({'error': 'لم يتم إرسال ملف'}), 400
 
-    file = request.files['file']
+    file = request.files['file'] 
+
 
     try:
-        df = pd.read_excel(file, dtype=str)  # إجبار كل القيم تكون نصوص
-        df = df.fillna('')  
-
+        df = pd.read_excel(file, dtype=str)
+        df = df.fillna('')
 
         field_map = {
             'اسم الزوج': 'husband_name',
@@ -804,6 +806,7 @@ def import_excel():
             'الضرر': 'damage_level',
             'المندوب': 'neighborhood',
             'ملاحظات': 'notes',
+            'حالة الإقامة': 'residence_status',
             'استلم مساعدة': 'has_received_aid'
         }
 
@@ -826,10 +829,20 @@ def import_excel():
         for _, row in df.iterrows():
             record = {k: v for k, v in row.to_dict().items() if k in allowed_fields}
 
+            # تحويل قيمة "استلم مساعدة" إلى Boolean
             if 'has_received_aid' in record:
                 value = str(record['has_received_aid']).strip()
                 record['has_received_aid'] = value in ['نعم', 'yes', 'Yes', '1', 'true', 'True']
 
+            # ضبط حالة الإقامة
+            if 'residence_status' in record:
+                value = str(record['residence_status']).strip()
+                if value in ['مقيم', 'نازح']:
+                    record['residence_status'] = value
+                else:
+                    record['residence_status'] = 'مقيم'  # قيمة افتراضية
+
+            # التحقق من التكرار
             h_id = str(record.get('husband_id_number', '')).strip()
             w_id = str(record.get('wife_id_number', '')).strip()
 
@@ -841,6 +854,7 @@ def import_excel():
             resident = Resident(**record)
             db.session.add(resident)
             count += 1
+
 
         db.session.commit()
 
