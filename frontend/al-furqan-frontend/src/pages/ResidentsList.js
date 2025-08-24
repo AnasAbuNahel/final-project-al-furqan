@@ -64,12 +64,25 @@ const ResidentsList = () => {
   const applyAllFilters = () => {
     let filtered = [...residents];
 
-    if (searchTerm) {
-      filtered = filtered.filter((r) =>
-        r.husband_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.husband_id_number?.includes(searchTerm)
-      );
-    }
+  if (searchTerm) {
+    const lowerSearch = searchTerm.toLowerCase();
+    filtered = filtered.filter((r) => {
+      const name = r.husband_name?.toLowerCase() || "";
+      const id = r.husband_id_number || "";
+
+      // كل حرف في searchTerm لازم يكون بنفس الترتيب في النص
+      const matchName = lowerSearch
+        .split("")
+        .every((ch, i) => name[i] === ch);
+
+      const matchId = searchTerm
+        .split("")
+        .every((ch, i) => id[i] === ch);
+
+      return matchName || matchId;
+    });
+  }
+
 
     if (filterOperator && filterValue !== '') {
       const val = parseInt(filterValue);
