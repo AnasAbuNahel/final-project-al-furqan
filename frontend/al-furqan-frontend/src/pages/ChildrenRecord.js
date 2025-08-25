@@ -105,9 +105,12 @@ const ChildRegistration = () => {
   setActiveFilters(newFilters);
   setSortModal({ open: false, column: null });
 
+  // إعادة تطبيق الفلترة بناءً على الفلاتر المتبقية
   applyAllFilters(newFilters);
 };
 
+
+  // تحميل البيانات من الخادم
   useEffect(() => {
     if (!token) {
       toast.error("الرجاء تسجيل الدخول.");
@@ -133,6 +136,7 @@ const ChildRegistration = () => {
       });
   }, [token]);
 
+  // تصفية البيانات حسب البحث
   useEffect(() => {
     const results = children.filter((item) => {
       return (
@@ -148,6 +152,7 @@ const ChildRegistration = () => {
   }, [activeFilters]);
 
 
+  // تصدير البيانات إلى إكسل
   const exportToExcel = () => {
     const exportData = filtered.map((item) => ({
       الاسم: item.name || "",
@@ -167,6 +172,8 @@ const ChildRegistration = () => {
     toast.success("تم تصدير البيانات إلى Excel بنجاح!");
   };
 
+  // استيراد البيانات من ملف إكسل
+// استيراد البيانات من ملف إكسل
 const handleImportExcel = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -177,7 +184,7 @@ const handleImportExcel = async (event) => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: "array" });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      let jsonData = XLSX.utils.sheet_to_json(worksheet);
+      let jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
       const requiredColumns = [
         "الاسم",
@@ -189,6 +196,7 @@ const handleImportExcel = async (event) => {
         "نوع_الاستفادة",
         "عدد_مرات_الاستفادة",
       ];
+
       const missingColumns = requiredColumns.filter(
         (column) => !jsonData[0].hasOwnProperty(column)
       );
@@ -201,51 +209,46 @@ const handleImportExcel = async (event) => {
       for (const row of jsonData) {
         let { الاسم, الهوية, تاريخ_الميلاد, العمر, الجوال, الجنس, نوع_الاستفادة, عدد_مرات_الاستفادة } = row;
 
+        // تحويل تاريخ الميلاد إذا كان رقم تسلسلي
         if (تاريخ_الميلاد && typeof تاريخ_الميلاد === "number") {
           تاريخ_الميلاد = XLSX.SSF.format("yyyy-mm-dd", تاريخ_الميلاد);
         }
 
-        if (!الاسم || !الهوية || !تاريخ_الميلاد || !العمر || !الجوال || !الجنس || !نوع_الاستفادة) {
-          toast.warn(`البيانات غير مكتملة للطفل ${الاسم}`);
-          continue;
-        }
+        // استبدال القيم الفارغة بشرطة "-"
+        const payload = {
+          name: الاسم || "-",
+          id_number: الهوية || "-",
+          birth_date: تاريخ_الميلاد || "-",
+          age: العمر ? Number(العمر) : "-",
+          phone: الجوال || "-",
+          gender: الجنس || "-",
+          benefit_type: نوع_الاستفادة || "-",
+          benefit_count: عدد_مرات_الاستفادة ? Number(عدد_مرات_الاستفادة) : 0,
+        };
 
         try {
           await axios.post(
             "https://final-project-al-furqan.onrender.com/api/children",
-            {
-              name: الاسم,
-              id_number: الهوية,
-              birth_date: تاريخ_الميلاد,
-              age: العمر,
-              phone: الجوال,
-              gender: الجنس,
-              benefit_type: نوع_الاستفادة,
-              benefit_count: عدد_مرات_الاستفادة,
-            },
+            payload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          toast.success(`تمت إضافة الطفل ${الاسم}`);
+          toast.success(`تمت إضافة الطفل ${payload.name}`);
         } catch (error) {
           console.error("خطأ أثناء الاستيراد:", error);
-          toast.error(`فشل في إضافة الطفل ${الاسم}`);
+          toast.error(`فشل في إضافة الطفل ${payload.name}`);
         }
       }
 
-      try {
-        const res = await axios.get("https://final-project-al-furqan.onrender.com/api/children", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const sortedData = res.data.sort((a, b) => {
-          const nameA = a.name?.toLowerCase() || "";
-          const nameB = b.name?.toLowerCase() || "";
-          return nameA.localeCompare(nameB, "ar");
-        });
-        setChildren(sortedData);
-        setFiltered(sortedData);
-      } catch (e) {
-        console.error("خطأ في إعادة تحميل البيانات:", e);
-      }
+      // إعادة تحميل البيانات بعد الاستيراد
+      const res = await axios.get("https://final-project-al-furqan.onrender.com/api/children", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const sortedData = res.data.sort((a, b) =>
+        (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase(), "ar")
+      );
+      setChildren(sortedData);
+      setFiltered(sortedData);
+
     } catch (err) {
       console.error("خطأ في معالجة البيانات:", err);
       toast.error("حدث خطأ أثناء معالجة البيانات في الملف.");
@@ -255,6 +258,7 @@ const handleImportExcel = async (event) => {
   reader.readAsArrayBuffer(file);
 };
 
+  // فتح نافذة تعديل بيانات الطفل
   const handleEdit = (child) => {
     setCurrentChild({
       id: child.id,
@@ -270,6 +274,7 @@ const handleImportExcel = async (event) => {
     setEditModalOpen(true);
   };
 
+  // حفظ التعديلات
   const handleSaveEdit = () => {
     const updatedChild = { ...currentChild };
     axios
@@ -311,8 +316,10 @@ const handleDelete = (id) => {
       .catch((error) => {
         console.error("Error deleting record: ", error);
         if (error.response) {
+          // الخادم رد برسالة خطأ
           toast.error(`حدث خطأ: ${error.response.data.message || "فشل في حذف السجل!"}`);
         } else {
+          // خطأ في الاتصال
           toast.error("حدث خطأ أثناء الاتصال بالخادم.");
         }
       });
@@ -410,14 +417,79 @@ const handleDelete = (id) => {
             {filtered.map((child, i) => (
               <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f9f9f9" : "white" }}>
                 <td style={{ padding: 8 }}>{i + 1}</td>
-                <td style={{ padding: 8 }}>{child.name}</td>
-                <td style={{ padding: 8 }}>{child.id_number}</td>
-                <td style={{ padding: 8 }}>{child.birth_date}</td>
-                <td style={{ padding: 8 }}>{child.age ? Math.floor(child.age) : ""}</td>
-                <td style={{ padding: 8 }}>{child.phone}</td>
-                <td style={{ padding: 8 }}>{child.gender}</td>
-                <td style={{ padding: 8 }}>{child.benefit_type}</td>
-                <td style={{ padding: 8 }}>{child.benefit_count}</td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.name === "-" ? "darkred" : "black",
+                    backgroundColor: child.name === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.name}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.id_number === "-" ? "darkred" : "black",
+                    backgroundColor: child.id_number === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.id_number}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.birth_date === "-" ? "darkred" : "black",
+                    backgroundColor: child.birth_date === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.birth_date || "-"}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.age === "-" ? "darkred" : "black",
+                    backgroundColor: child.age === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.age !== "-" ? Math.floor(child.age) : "-"}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.phone === "-" ? "darkred" : "black",
+                    backgroundColor: child.phone === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.phone}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.gender === "-" ? "darkred" : "black",
+                    backgroundColor: child.gender === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.gender}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.benefit_type === "-" ? "darkred" : "black",
+                    backgroundColor: child.benefit_type === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.benefit_type}
+                </td>
+                <td
+                  style={{
+                    padding: 8,
+                    color: child.benefit_count === "-" ? "darkred" : "black",
+                    backgroundColor: child.benefit_count === "-" ? "#fdd" : "transparent",
+                  }}
+                >
+                  {child.benefit_count}
+                </td>
+
                 <td style={{ padding: 8 }}>
                   <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
                     <button
@@ -494,7 +566,7 @@ const handleDelete = (id) => {
               fontFamily: "Arial, sans-serif",
               zIndex: 1001,
               animation: "fadeIn 0.5s ease-in-out",
-              direction: "rtl", 
+              direction: "rtl", // عرض المحتوى من اليمين لليسار
             },
           }}
         >
@@ -502,6 +574,7 @@ const handleDelete = (id) => {
             تعديل سجل الطفل
           </h3>
 
+          {/* المدخلات */}
           <div style={{ marginBottom: "20px" }}>
             <label>الاسم:</label>
             <input
@@ -567,7 +640,7 @@ const handleDelete = (id) => {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              inputMode="numeric" 
+              inputMode="numeric" // استخدام الأرقام الإنجليزية
             />
           </div>
 
@@ -636,10 +709,11 @@ const handleDelete = (id) => {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              inputMode="numeric" 
+              inputMode="numeric" // استخدام الأرقام الإنجليزية
             />
           </div>
 
+          {/* الأزرار */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <button
               onClick={() => setEditModalOpen(false)}
@@ -671,6 +745,7 @@ const handleDelete = (id) => {
             </button>
           </div>
         </Modal>
+        {/* نافذة منبثقة لاختيار نوع المساعدة */}
         <Modal
           isOpen={isModalOpen}
           onRequestClose={() => setIsModalOpen(false)}
@@ -773,12 +848,14 @@ const handleDelete = (id) => {
               .then(() => {
                 toast.success("تم تحديث بيانات المساعدة بنجاح!");
 
+                // تحديث الواجهة
                 const updatedList = children.map((child) =>
                   child.id === helpChild.id ? updatedChild : child
                 );
                 setChildren(updatedList);
                 setFiltered(updatedList);
 
+                // إغلاق النافذة وتصفير الحقول
                 setHelpType("");
                 setOtherHelp("");
                 setIsOtherSelected(false);
@@ -970,4 +1047,3 @@ const handleDelete = (id) => {
 };
 
 export default ChildRegistration;
-
