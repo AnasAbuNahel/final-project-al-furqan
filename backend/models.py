@@ -171,7 +171,7 @@ class Export(db.Model, TenantMixin):
 class Child(db.Model, TenantMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    id_number = db.Column(db.String(50), nullable=False)  # unique per-tenant (enforced at app-level)
+    id_number = db.Column(db.Integer, nullable=False)
     birth_date = db.Column(db.String(20), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     phone = db.Column(db.String(20), nullable=False)
