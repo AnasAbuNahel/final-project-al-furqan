@@ -19,7 +19,7 @@ const ResidentsList = () => {
   const [filterOperator, setFilterOperator] = useState('');
   const [filterValue, setFilterValue] = useState('');
   const [damageFilterValue, setDamageFilterValue] = useState('');
-  const [delegateFilterValue, setDelegateFilterValue] = useState('');
+  const [delegateFilterValue, setDelegateFilterValue] = useState([]);
   const [aidFilterValue, setAidFilterValue] = useState('');
   const [residenceFilterValue, setResidenceFilterValue] = useState('');
 
@@ -61,16 +61,16 @@ const ResidentsList = () => {
     applyAllFilters();
   }, [searchTerm, filterOperator, filterValue, damageFilterValue, delegateFilterValue, aidFilterValue, residenceFilterValue]);
 
-  const applyAllFilters = () => {
-    let filtered = [...residents];
+const applyAllFilters = () => {
+  let filtered = [...residents];
 
+  // فلترة البحث بالحروف
   if (searchTerm) {
     const lowerSearch = searchTerm.toLowerCase();
     filtered = filtered.filter((r) => {
       const name = r.husband_name?.toLowerCase() || "";
       const id = r.husband_id_number || "";
 
-      // كل حرف في searchTerm لازم يكون بنفس الترتيب في النص
       const matchName = lowerSearch
         .split("")
         .every((ch, i) => name[i] === ch);
@@ -83,37 +83,44 @@ const ResidentsList = () => {
     });
   }
 
+  // فلترة عدد الأفراد
+  if (filterOperator && filterValue !== '') {
+    const val = parseInt(filterValue);
+    filtered = filtered.filter((r) => {
+      if (filterOperator === '>') return r.num_family_members > val;
+      if (filterOperator === '<') return r.num_family_members < val;
+      if (filterOperator === '=') return r.num_family_members === val;
+      return true;
+    });
+  }
 
-    if (filterOperator && filterValue !== '') {
-      const val = parseInt(filterValue);
-      filtered = filtered.filter((r) => {
-        if (filterOperator === '>') return r.num_family_members > val;
-        if (filterOperator === '<') return r.num_family_members < val;
-        if (filterOperator === '=') return r.num_family_members === val;
-        return true;
-      });
-    }
+  // فلترة الضرر
+  if (damageFilterValue) {
+    filtered = filtered.filter((r) => r.damage_level === damageFilterValue);
+  }
 
-    if (damageFilterValue) {
-      filtered = filtered.filter((r) => r.damage_level === damageFilterValue);
-    }
+  // فلترة المندوب
+if (delegateFilterValue.length > 0) {
+  const selectedDelegates = delegateFilterValue.map(d => d.trim());
+  filtered = filtered.filter(r => selectedDelegates.includes((r.neighborhood || "").trim()));
+}
 
-    if (delegateFilterValue) {
-      filtered = filtered.filter((r) => r.neighborhood === delegateFilterValue);
-    }
 
-    if (aidFilterValue !== '') {
-      filtered = filtered.filter((r) =>
-        aidFilterValue === 'received' ? r.has_received_aid : !r.has_received_aid
-      );
-    }
+  // فلترة الاستفادة
+  if (aidFilterValue !== '') {
+    filtered = filtered.filter((r) =>
+      aidFilterValue === 'received' ? r.has_received_aid : !r.has_received_aid
+    );
+  }
 
-    if (residenceFilterValue) {
-      filtered = filtered.filter((r) => r.residence_status === residenceFilterValue);
-    }
+  // فلترة حالة الإقامة
+  if (residenceFilterValue) {
+    filtered = filtered.filter((r) => r.residence_status === residenceFilterValue);
+  }
 
-    setFilteredResidents(filtered);
-  };
+  setFilteredResidents(filtered);
+};
+
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
 
@@ -397,22 +404,24 @@ const ResidentsList = () => {
           <div style={styles.popupBox}>
             <h3 style={styles.popupTitle}>تصفية حسب اسم المندوب</h3>
             <select
+              multiple
               value={delegateFilterValue}
               onChange={(e) => {
-                setDelegateFilterValue(e.target.value);
-                setShowDelegateFilterPopup(false); 
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                setDelegateFilterValue(selected);
               }}
               style={styles.select}
             >
-              <option value="">كل المناديب</option>
-              {Array.from(new Set(residents.map((r) => r.neighborhood).filter(Boolean))).map((delegate, idx) => (
-                <option key={idx} value={delegate}>
-                  {delegate}
-                </option>
+              {Array.from(new Set(residents.map(r => (r.neighborhood || "").trim()).filter(Boolean)))
+                .sort((a, b) => a.localeCompare(b, "ar"))
+                .map((delegate, idx) => (
+                  <option key={idx} value={delegate}>
+                    {delegate}
+                  </option>
               ))}
             </select>
             <div style={styles.popupButtons}>
-              <button onClick={() => setShowDelegateFilterPopup(false)} style={styles.popupApply}>إغلاق</button>
+              <button onClick={() => setShowDelegateFilterPopup(false)} style={styles.popupApply}>تطبيق</button>
               <button onClick={() => { setDelegateFilterValue(''); setShowDelegateFilterPopup(false); }} style={styles.popupCancel}>مسح</button>
             </div>
           </div>
