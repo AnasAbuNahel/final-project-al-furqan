@@ -111,13 +111,14 @@ class Aid(db.Model, TenantMixin):
 class Child(db.Model, TenantMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    id_number = db.Column(db.String(50), nullable=False)
+    id_number = db.Column(db.Integer, nullable=False, unique=True)
     birth_date = db.Column(db.String(20), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     phone = db.Column(db.String(20), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
     benefit_type = db.Column(db.String(100), nullable=False)
     benefit_count = db.Column(db.Integer, default=0)
+
 
     def serialize(self):
         return {
@@ -213,7 +214,7 @@ def add_child():
 
     new_child = Child(
         name=data['name'],
-        id_number=data['id_number'],
+        id_number=int(data['id_number']),
         birth_date=data['birth_date'],
         age=int(data['age']),
         phone=data['phone'],
@@ -387,7 +388,7 @@ def import_children():
 
             new_child = Child(
                 name=str(row['name']).strip(),
-                id_number=str(row['id_number']).strip(),
+                id_number=int(row['id_number']),
                 birth_date=str(row['birth_date']),
                 age=int(row['age']),
                 phone=str(row['phone']).strip(),
