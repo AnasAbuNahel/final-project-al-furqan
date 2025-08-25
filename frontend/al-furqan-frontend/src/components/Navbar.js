@@ -271,9 +271,9 @@ const styles = {
   notificationWrapper: { position: 'relative', display: 'inline-block' },
   notificationIcon: { fontSize: '22px', color: 'white', cursor: 'pointer' },
   notificationBadge: {
-    position: 'absolute', top: '-8px', left: '-6px',
+    position: 'absolute', top: '-12px', left: '-8px',
     backgroundColor: 'red', color: 'white', borderRadius: '50%',
-    width: '16px', height: '16px', fontSize: '10px',
+    width: '21px', height: '21px', fontSize: '10px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontWeight: 'bold',
   },
