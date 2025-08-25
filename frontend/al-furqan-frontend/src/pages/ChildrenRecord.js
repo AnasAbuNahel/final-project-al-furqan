@@ -111,30 +111,39 @@ const ChildRegistration = () => {
 
 
   // تحميل البيانات من الخادم
-  useEffect(() => {
-    if (!token) {
-      toast.error("الرجاء تسجيل الدخول.");
-      return;
-    }
+useEffect(() => {
+  if (!token) {
+    toast.error("الرجاء تسجيل الدخول.");
+    return;
+  }
 
-    axios
-      .get("https://final-project-al-furqan.vercel.app/api/children", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        const sortedData = res.data.sort((a, b) => {
-          const nameA = a.name?.toLowerCase() || "";
-          const nameB = b.name?.toLowerCase() || "";
-          return nameA.localeCompare(nameB, "ar");
-        });
-        setChildren(sortedData);
-        setFiltered(sortedData);
-      })
-      .catch((error) => {
-        console.error("Error fetching data: ", error);
-        toast.error("حدث خطأ أثناء تحميل البيانات.");
+  axios
+    .get("https://final-project-al-furqan.vercel.app/api/children", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      // التأكد أن البيانات مصفوفة
+      const dataArray = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.children)
+        ? res.data.children
+        : [];
+
+      // ترتيب البيانات حسب الاسم
+      const sortedData = dataArray.sort((a, b) => {
+        const nameA = a.name?.toLowerCase() || "";
+        const nameB = b.name?.toLowerCase() || "";
+        return nameA.localeCompare(nameB, "ar");
       });
-  }, [token]);
+
+      setChildren(sortedData);
+      setFiltered(sortedData);
+    })
+    .catch((error) => {
+      console.error("Error fetching data: ", error);
+      toast.error("حدث خطأ أثناء تحميل البيانات.");
+    });
+}, [token]);
 
   // تصفية البيانات حسب البحث
   useEffect(() => {
@@ -1047,3 +1056,4 @@ const handleDelete = (id) => {
 };
 
 export default ChildRegistration;
+
