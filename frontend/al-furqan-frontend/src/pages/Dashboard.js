@@ -3,9 +3,11 @@ import { FaArrowDown, FaArrowUp, FaDollarSign } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 // إعداد القاعدة العامة لـ Axios
-axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
+axios.defaults.baseURL = "https://final-project-al-furqan.vercel.app";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -32,8 +34,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const totalImports = imports
-  .filter(imp => imp.type === "مساعدات نقدية") 
-  .reduce((sum, imp) => sum + parseFloat(imp.amount || 0), 0);
+    .filter(imp => imp.type === "مساعدات نقدية") 
+    .reduce((sum, imp) => sum + parseFloat(imp.amount || 0), 0);
   const totalExports = exports.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
   const totalExpenses = totalImports - totalExports;
 
@@ -49,6 +51,36 @@ const Dashboard = () => {
     }, 500);
   };
 
+  const handleExportExcel = () => {
+    const data = [
+      ["م", "الواردات - البيان", "الواردات - المبلغ", "الصادرات - التاريخ", "الصادرات - البيان", "الصادرات - المبلغ"],
+    ];
+
+    const maxRows = Math.max(imports.length, exports.length);
+    for (let i = 0; i < maxRows; i++) {
+      data.push([
+        i + 1,
+        `${imports[i]?.name || ""} - ${imports[i]?.source || ""}`,
+        imports[i]?.amount || "",
+        exports[i]?.date || "",
+        exports[i]?.description || "",
+        exports[i]?.amount || "",
+      ]);
+    }
+
+    data.push([]);
+    data.push(["", "إجمالي الواردات", totalImports, "", "إجمالي الصادرات", totalExports]);
+    data.push(["", "", "", "", "الرصيد", totalImports - totalExports]);
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "التقرير المالي");
+
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, "التقرير_المالي.xlsx");
+  };
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openExportModal = () => setIsExportModalOpen(true);
@@ -59,7 +91,7 @@ const Dashboard = () => {
     const newImport = { ...importData };
 
     try {
-      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", newImport);
+      const res = await axios.post("https://final-project-al-furqan.vercel.app/api/imports", newImport);
       setImports([...imports, res.data]);
       toast.success("تم حفظ الإيراد بنجاح");
       closeModal();
@@ -73,7 +105,7 @@ const Dashboard = () => {
   const handleExportSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/exports", exportData);
+      const res = await axios.post("https://final-project-al-furqan.vercel.app/api/exports", exportData);
       setExports([...exports, res.data]);
       toast.success("تم حفظ الصادر بنجاح");
       closeExportModal();
@@ -85,37 +117,37 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-  const fetchData = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.");
-      navigate("/login"); // أو أي صفحة تسجيل دخول
-      return;
-    }
-
-    try {
-      const [importRes, exportRes] = await Promise.all([
-        axios.get("https://final-project-al-furqan.onrender.com/api/imports", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
-      setImports(importRes.data);
-      setExports(exportRes.data);
-    } catch (error) {
-      console.error("فشل في تحميل البيانات:", error);
-      if (error.response?.status === 401) {
-        toast.error("غير مصرح. يرجى تسجيل الدخول.");
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.");
         navigate("/login");
+        return;
       }
-    }
-  };
+
+      try {
+        const [importRes, exportRes] = await Promise.all([
+          axios.get("https://final-project-al-furqan.vercel.app/api/imports", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          axios.get("https://final-project-al-furqan.vercel.app/api/exports", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
+        setImports(importRes.data);
+        setExports(exportRes.data);
+      } catch (error) {
+        console.error("فشل في تحميل البيانات:", error);
+        if (error.response?.status === 401) {
+          toast.error("غير مصرح. يرجى تسجيل الدخول.");
+          navigate("/login");
+        }
+      }
+    };
 
     fetchData();
   }, []);
@@ -139,6 +171,7 @@ const Dashboard = () => {
 
         <div style={styles.buttonGroup}>
           <button onClick={handlePrint} style={styles.darkButton}>طباعة التقرير المالي</button>
+          <button onClick={handleExportExcel} style={styles.darkButton}>تصدير التقرير كملف Excel</button>
         </div>
       </div>
 
@@ -173,14 +206,14 @@ const Dashboard = () => {
           </thead>
           <tbody>
             {Array.from({ length: Math.max(imports.length, exports.length) }).map((_, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{imports[index]?.name || ""} - {imports[index]?.source || ""}</td> 
-              <td>{imports[index]?.amount || ""}</td>
-              <td>{exports[index]?.date || ""}</td>
-              <td>{exports[index]?.description || ""}</td>
-              <td>{exports[index]?.amount || ""}</td>
-            </tr>
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{imports[index]?.name || ""} - {imports[index]?.source || ""}</td> 
+                <td>{imports[index]?.amount || ""}</td>
+                <td>{exports[index]?.date || ""}</td>
+                <td>{exports[index]?.description || ""}</td>
+                <td>{exports[index]?.amount || ""}</td>
+              </tr>
             ))}
             <tr>
               <td colSpan="2"><strong>الإجمالي</strong></td>
@@ -277,53 +310,53 @@ const Dashboard = () => {
         </div>
       )}
 
-        <style>
-          {`
-            @media print {
-              body * {
-                visibility: hidden !important;
-              }
-              .print-section, .print-section * {
-                visibility: visible !important;
-              }
-              .print-section {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                padding: 20px;
-                direction: rtl;
-                background: white;
-              }
-
-              .print-section table,
-              .print-section th,
-              .print-section td {
-                border: 1px solid black !important;
-                border-collapse: collapse !important;
-              }
-
-              .print-section th,
-              .print-section td {
-                padding: 8px;
-                text-align: center;
-                font-size: 14px;
-              }
-
-              .print-section thead {
-                background-color: #f0f0f0 !important;
-              }
-
-              .print-section tr:nth-child(even) {
-                background-color: #fafafa !important;
-              }
-
-              .print-section tr:nth-child(odd) {
-                background-color: white !important;
-              }
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden !important;
             }
-          `}
-        </style>
+            .print-section, .print-section * {
+              visibility: visible !important;
+            }
+            .print-section {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              padding: 20px;
+              direction: rtl;
+              background: white;
+            }
+
+            .print-section table,
+            .print-section th,
+            .print-section td {
+              border: 1px solid black !important;
+              border-collapse: collapse !important;
+            }
+
+            .print-section th,
+            .print-section td {
+              padding: 8px;
+              text-align: center;
+              font-size: 14px;
+            }
+
+            .print-section thead {
+              background-color: #f0f0f0 !important;
+            }
+
+            .print-section tr:nth-child(even) {
+              background-color: #fafafa !important;
+            }
+
+            .print-section tr:nth-child(odd) {
+              background-color: white !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };
@@ -422,14 +455,14 @@ const styles = {
     transition: "background 0.3s",
     marginTop: 20
   },
-cancelButton: {
-  backgroundColor: "#e74c3c", // أحمر
-  color: "#fff",
-  padding: "10px 25px",
-  borderRadius: 8,
-  border: "none",
-  cursor: "pointer",
-},
+  cancelButton: {
+    backgroundColor: "#e74c3c",
+    color: "#fff",
+    padding: "10px 25px",
+    borderRadius: 8,
+    border: "none",
+    cursor: "pointer",
+  },
   saveButton: {
     backgroundColor: "#27ae60",
     color: "white",
@@ -439,19 +472,19 @@ cancelButton: {
     cursor: "pointer",
   },
 
-modalOverlay: {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  backgroundColor: "rgba(0,0,0,0.4)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "flex-start", 
-  paddingTop: 50,         
-  zIndex: 9999,
-},
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start", 
+    paddingTop: 50,         
+    zIndex: 9999,
+  },
 
   modal: {
     backgroundColor: "white",
@@ -481,13 +514,12 @@ modalOverlay: {
     fontSize: 16,
     marginTop: 5
   },
-buttonRow: {
-  display: "flex",
-  justifyContent: "flex-start",
-  marginTop: 20,
-  gap: 15, 
-},
-
+  buttonRow: {
+    display: "flex",
+    justifyContent: "flex-start",
+    marginTop: 20,
+    gap: 15, 
+  },
 };
 
 export default Dashboard;
