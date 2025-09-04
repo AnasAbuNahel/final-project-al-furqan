@@ -7,7 +7,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 // إعداد القاعدة العامة لـ Axios
-axios.defaults.baseURL = "https://final-project-al-furqan.vercel.app";
+axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 const Dashboard = () => {
@@ -91,7 +91,7 @@ const Dashboard = () => {
     const newImport = { ...importData };
 
     try {
-      const res = await axios.post("https://final-project-al-furqan.vercel.app/api/imports", newImport);
+      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", newImport);
       setImports([...imports, res.data]);
       toast.success("تم حفظ الإيراد بنجاح");
       closeModal();
@@ -105,7 +105,7 @@ const Dashboard = () => {
   const handleExportSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://final-project-al-furqan.vercel.app/api/exports", exportData);
+      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/exports", exportData);
       setExports([...exports, res.data]);
       toast.success("تم حفظ الصادر بنجاح");
       closeExportModal();
@@ -127,12 +127,12 @@ const Dashboard = () => {
 
       try {
         const [importRes, exportRes] = await Promise.all([
-          axios.get("https://final-project-al-furqan.vercel.app/api/imports", {
+          axios.get("https://final-project-al-furqan.onrender.com/api/imports", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }),
-          axios.get("https://final-project-al-furqan.vercel.app/api/exports", {
+          axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
