@@ -1,14 +1,36 @@
-import React, { useState, useEffect } from "react";
-import { FaArrowDown, FaArrowUp, FaDollarSign } from "react-icons/fa";
+import React, { useState, useEffect, useMemo } from "react";
+import { FaArrowDown, FaArrowUp, FaDollarSign, FaBoxOpen, FaDonate } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import CountUp from "react-countup";
+import { motion } from "framer-motion";
 
-// إعداد القاعدة العامة لـ Axios
+// إعداد Axios
 axios.defaults.baseURL = "https://final-project-al-furqan.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
+
+// Utilities
+const toNumber = (v) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+};
+const sumBy = (arr, fn) => arr.reduce((s, x) => s + toNumber(fn(x)), 0);
+const groupBySum = (arr, keyFn, valFn) => {
+  const map = {};
+  for (const item of arr) {
+    const k = keyFn(item);
+    map[k] = (map[k] || 0) + toNumber(valFn(item));
+  }
+  return Object.entries(map)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+};
+const formatCurrency = (n) => `${toNumber(n).toLocaleString("ar-EG")} شيكل`;
+
+const formatParcelCount = (n) => `${toNumber(n).toLocaleString("ar-EG")} طرد`;
 
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,44 +40,68 @@ const Dashboard = () => {
   const [exports, setExports] = useState([]);
 
   const [importData, setImportData] = useState({
-    source: '',
-    name: '',
-    date: '',
-    type: '', 
-    amount: ''
+    source: "",
+    name: "",
+    date: "",
+    type: "",
+    amount: "",
   });
 
   const [exportData, setExportData] = useState({
-    description: '',
-    amount: '',
-    date: ''
+    description: "",
+    amount: "",
+    date: "",
   });
 
   const navigate = useNavigate();
 
-  const totalImports = imports
-    .filter(imp => imp.type === "مساعدات نقدية") 
-    .reduce((sum, imp) => sum + parseFloat(imp.amount || 0), 0);
-  const totalExports = exports.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
-  const totalExpenses = totalImports - totalExports;
+  // إجماليات
+  const totalImports = useMemo(
+    () => imports.filter((imp) => imp.type === "مساعدات نقدية").reduce((sum, imp) => sum + toNumber(imp.amount), 0),
+    [imports]
+  );
+  const totalExports = useMemo(() => exports.reduce((sum, exp) => sum + toNumber(exp.amount), 0), [exports]);
+  const totalBalance = totalImports - totalExports;
 
+  // واردات الطرود
+  const parcels = useMemo(() => imports.filter((imp) => (imp.type || "").includes("طرود")), [imports]);
+  const parcelTotals = useMemo(() => groupBySum(parcels, (x) => x.type || "غير محدد", (x) => x.amount), [parcels]);
+  const parcelsGrandTotal = useMemo(() => sumBy(parcelTotals, (x) => x.value), [parcelTotals]);
+
+  // واردات المساعدات النقدية فقط
+  const cashImports = useMemo(
+    () => imports.filter((imp) => imp.type === "مساعدات نقدية"),
+    [imports]
+  );
+
+  const sourceTotals = useMemo(
+    () => groupBySum(cashImports, (x) => x.source || "غير محدد", (x) => x.amount),
+    [cashImports]
+  );
+
+  const sourcesGrandTotal = useMemo(
+    () => sumBy(sourceTotals, (x) => x.value),
+    [sourceTotals]
+  );
+
+
+  // الصادرات حسب الفئة
+  const exportTotals = useMemo(() => groupBySum(exports, (x) => x.description || "غير محدد", (x) => x.amount), [exports]);
+  const exportGrandTotal = useMemo(() => sumBy(exportTotals, (x) => x.value), [exportTotals]);
+
+  // الطباعة والتصدير
   const handlePrint = () => {
     const printSection = document.querySelector(".print-section");
     if (!printSection) return;
-
     printSection.style.display = "block";
-
     setTimeout(() => {
       window.print();
       printSection.style.display = "none";
-    }, 500);
+    }, 300);
   };
 
   const handleExportExcel = () => {
-    const data = [
-      ["م", "الواردات - البيان", "الواردات - المبلغ", "الصادرات - التاريخ", "الصادرات - البيان", "الصادرات - المبلغ"],
-    ];
-
+    const data = [["م", "الواردات - البيان", "الواردات - المبلغ", "الصادرات - التاريخ", "الصادرات - البيان", "الصادرات - المبلغ"]];
     const maxRows = Math.max(imports.length, exports.length);
     for (let i = 0; i < maxRows; i++) {
       data.push([
@@ -67,37 +113,33 @@ const Dashboard = () => {
         exports[i]?.amount || "",
       ]);
     }
-
     data.push([]);
-    data.push(["", "إجمالي الواردات", totalImports, "", "إجمالي الصادرات", totalExports]);
-    data.push(["", "", "", "", "الرصيد", totalImports - totalExports]);
-
+    data.push(["", "إجمالي الواردات (نقدية)", totalImports, "", "إجمالي الصادرات", totalExports]);
+    data.push(["", "", "", "", "الرصيد", totalBalance]);
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "التقرير المالي");
-
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, "التقرير_المالي.xlsx");
   };
 
+  // فتح/إغلاق النوافذ
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openExportModal = () => setIsExportModalOpen(true);
   const closeExportModal = () => setIsExportModalOpen(false);
 
+  // الحفظ
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newImport = { ...importData };
-
     try {
-      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", newImport);
-      setImports([...imports, res.data]);
+      const res = await axios.post("https://final-project-al-furqan.onrender.com/api/imports", importData);
+      setImports((prev) => [...prev, res.data]);
       toast.success("تم حفظ الإيراد بنجاح");
       closeModal();
-      setImportData({ source: '', name: '', date: '', type: '', amount: '' });
+      setImportData({ source: "", name: "", date: "", type: "", amount: "" });
     } catch (error) {
-      console.error(error.response?.data || error.message);
       toast.error("حدث خطأ أثناء حفظ الإيراد");
     }
   };
@@ -106,420 +148,301 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       const res = await axios.post("https://final-project-al-furqan.onrender.com/api/exports", exportData);
-      setExports([...exports, res.data]);
+      setExports((prev) => [...prev, res.data]);
       toast.success("تم حفظ الصادر بنجاح");
       closeExportModal();
-      setExportData({ description: '', amount: '', date: '' });
+      setExportData({ description: "", amount: "", date: "" });
     } catch (error) {
-      console.error(error.response?.data || error.message);
       toast.error("حدث خطأ أثناء حفظ الصادر");
     }
   };
 
+  // جلب البيانات
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.");
+        toast.error("انتهت صلاحية الجلسة");
         navigate("/login");
         return;
       }
-
       try {
         const [importRes, exportRes] = await Promise.all([
-          axios.get("https://final-project-al-furqan.onrender.com/api/imports", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get("https://final-project-al-furqan.onrender.com/api/exports", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+          axios.get("/api/imports", { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get("/api/exports", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-        setImports(importRes.data);
-        setExports(exportRes.data);
-      } catch (error) {
-        console.error("فشل في تحميل البيانات:", error);
-        if (error.response?.status === 401) {
-          toast.error("غير مصرح. يرجى تسجيل الدخول.");
-          navigate("/login");
-        }
+        setImports(importRes.data || []);
+        setExports(exportRes.data || []);
+      } catch {
+        toast.error("فشل في تحميل البيانات");
       }
     };
-
     fetchData();
-  }, []);
+  }, [navigate]);
 
   return (
     <div style={styles.page} dir="rtl">
       <Toaster position="top-center" />
-      <h1 style={styles.pageTitle}>تقرير لجنة طوارئ الفرقان</h1>
+      <h1 style={styles.pageTitle}>الصفحة الرئيسية</h1>
 
-      <div style={styles.wrapper}>
-        <div style={styles.cardGroup}>
-          <Card title="إجمالي الواردات" icon={<FaArrowDown style={{ color: "#3498db", fontSize: 28 }} />} value={totalImports} />
-          <Card title="إجمالي الصادرات" icon={<FaArrowUp style={{ color: "#2ecc71", fontSize: 28 }} />} value={totalExports} />
-          <Card title="إجمالي الرصيد" icon={<FaDollarSign style={{ color: "#9b59b6", fontSize: 28 }} />} value={totalExpenses} />
-        </div>
-
-        <div style={styles.buttonGroup}>
-          <button onClick={openModal} style={styles.primaryButton}>تسجيل الواردات</button>
-          <button onClick={openExportModal} style={styles.successButton}>تسجيل الصادرات</button>
-        </div>
-
-        <div style={styles.buttonGroup}>
-          <button onClick={handlePrint} style={styles.darkButton}>طباعة التقرير المالي</button>
-          <button onClick={handleExportExcel} style={styles.darkButton}>تصدير التقرير كملف Excel</button>
-        </div>
+      {/* البطاقات */}
+      <div style={styles.cardGroup}>
+        <StatCard title="إجمالي الواردات (نقدية)" icon={<FaArrowDown size={28} />} value={totalImports} gradient="linear-gradient(135deg, #3BA5EA, #1f78d1)" />
+        <StatCard title="إجمالي الصادرات" icon={<FaArrowUp size={28} />} value={totalExports} gradient="linear-gradient(135deg, #34d399, #10b981)" />
+        <StatCard title="إجمالي الرصيد" icon={<FaDollarSign size={28} />} value={totalBalance} gradient="linear-gradient(135deg, #a78bfa, #8b5cf6)" />
       </div>
 
-      {/* المنطقة الخاصة بالطباعة فقط */}
-      <div className="print-section" style={{ display: "none", direction: "rtl", padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-          <img src="/logo.png" alt="شعار لجنة طوارئ الفرقان" style={{ height: 60, marginLeft: 15 }} />
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: "bold" }}>لجنة طوارئ الفرقان</h1>
-        </div>
+      {/* الأزرار */}
+      <div style={styles.buttonGroup}>
+        <MotionButton onClick={openModal} label="تسجيل الواردات" gradient="#1f78d1" />
+        <MotionButton onClick={openExportModal} label="تسجيل الصادرات" gradient="#10b981" />
+        <MotionButton onClick={handlePrint} label="طباعة التقرير المالي" gradient="#334155" />
+        <MotionButton onClick={handleExportExcel} label="تصدير كـ Excel" gradient="#334155" />
+      </div>
 
-        <h2 style={{ textAlign: "center", fontSize: 18, marginBottom: 10 }}>
-          التقرير المالي الخاص بالشعب ومراكز الإيواء
-        </h2>
-        <h3 style={{ textAlign: "center", fontSize: 16, marginBottom: 20 }}>
-          لجنة طوارئ الفرقان
-        </h3>
-
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }} border="1">
-          <thead>
-            <tr>
-              <th colSpan="3">الإيرادات</th>
-              <th colSpan="3">المصروفات</th>
-            </tr>
-            <tr>
-              <th>م</th>
-              <th>البيان</th>
-              <th>المبلغ</th>
-              <th>التاريخ</th>
-              <th>البيان</th>
-              <th>المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: Math.max(imports.length, exports.length) }).map((_, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{imports[index]?.name || ""} - {imports[index]?.source || ""}</td> 
-                <td>{imports[index]?.amount || ""}</td>
-                <td>{exports[index]?.date || ""}</td>
-                <td>{exports[index]?.description || ""}</td>
-                <td>{exports[index]?.amount || ""}</td>
-              </tr>
+      {/* الأقسام */}
+      <div style={styles.sectionsGrid}>
+        <SectionCard title="واردات المساعدات النقدية" icon={<FaDonate />}>
+          {sourceTotals.length === 0 ? <EmptyHint text="لا توجد بيانات واردات بعد" /> :
+            sourceTotals.map((row, idx) => (
+              <ProgressRow key={idx} label={row.label} value={row.value} total={Math.max(1, sourcesGrandTotal)} color={palette[idx % palette.length]} />
             ))}
-            <tr>
-              <td colSpan="2"><strong>الإجمالي</strong></td>
-              <td><strong>{totalImports}</strong></td>
-              <td colSpan="2"><strong>الإجمالي</strong></td>
-              <td><strong>{totalExports}</strong></td>
-            </tr>
-            <tr>
-              <td colSpan="5"><strong>الرصيد</strong></td>
-              <td><strong>{totalImports - totalExports}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+          <Divider />
+          <RowSummary label="إجمالي الواردات" value={formatCurrency(sourcesGrandTotal)} />
+        </SectionCard>
+
+        <SectionCard title="واردات الطرود حسب النوع" icon={<FaBoxOpen />}>
+          {parcelTotals.length === 0 ? <EmptyHint text="لا توجد واردات طرود بعد" /> :
+            parcelTotals.map((row, idx) => (
+              <ProgressRow key={idx} label={row.label} value={row.value} total={Math.max(1, parcelsGrandTotal)} color={parcelPalette[idx % parcelPalette.length]} />
+            ))}
+          <Divider />
+          <RowSummary label="إجمالي واردات الطرود" value={formatParcelCount(parcelsGrandTotal)} />
+        </SectionCard>
+
+        <SectionCard title="توزيع الصادرات حسب الفئة" icon={<FaArrowUp />}>
+          {exportTotals.length === 0 ? <EmptyHint text="لا توجد بيانات صادرات بعد" /> :
+            exportTotals.map((row, idx) => (
+              <ProgressRow key={idx} label={row.label} value={row.value} total={Math.max(1, exportGrandTotal)} color={exportPalette[idx % exportPalette.length]} />
+            ))}
+          <Divider />
+          <RowSummary label="إجمالي الصادرات" value={formatCurrency(exportGrandTotal)} />
+        </SectionCard>
       </div>
 
+      {/* نافذة تسجيل وارد */}
       {isModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h2 style={styles.modalTitle}>تسجيل وارد جديد</h2>
-            <div style={styles.modalContent}>
-              <form onSubmit={handleSubmit}>
-                {[
-                  { label: "الجهة الموردة", key: "source", type: "select" },
-                  { label: "اسم المورد", key: "name", type: "text" },
-                  { label: "تاريخ الإيراد", key: "date", type: "date" },
-                  { label: "نوع الايراد", key: "type", type: "text" },
-                  { label: "الكمية", key: "amount", type: "number" }
-                ].map((field, idx) => (
-                  <div key={idx} style={{ marginBottom: 15 }}>
-                    <label>{field.label}</label>
-                    {field.type === "select" ? (
-                      <select
-                        value={importData[field.key]}
-                        onChange={(e) => setImportData({ ...importData, [field.key]: e.target.value })}
-                        style={styles.input}
-                      >
-                        <option value="">اختر</option>
-                        <option>مبادرين</option>
-                        <option>الطوارئ</option>
-                        <option>مؤسسات خيرية</option>
-                      </select>
-                    ) : (
-                      <input
-                        type={field.type}
-                        value={importData[field.key]}
-                        onChange={(e) => setImportData({ ...importData, [field.key]: e.target.value })}
-                        style={styles.input}
-                        required
-                      />
-                    )}
-                  </div>
-                ))}
+        <div style={modalStyles.overlay}>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={modalStyles.modal}
+          >
+            <h2 style={modalStyles.title}>تسجيل وارد جديد</h2>
+            <form onSubmit={handleSubmit}>
+              
+              {/* الجهة الموردة */}
+              <div style={{ marginBottom: 12 }}>
+                <label>الجهة الموردة</label>
+                <select
+                  value={importData.source}
+                  onChange={(e) => setImportData({ ...importData, source: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                >
+                  <option value="">اختر الجهة</option>
+                  <option value="مبادرين">مبادرين</option>
+                  <option value="طوارئ">طوارئ</option>
+                  <option value="مؤسسات خيرية">مؤسسات خيرية</option>
+                </select>
+              </div>
 
-                <div style={styles.buttonRow}>
-                  <button type="button" onClick={closeModal} style={styles.cancelButton}>إلغاء</button>
-                  <button type="submit" style={styles.saveButton}>حفظ</button>
+              {/* اسم المورد */}
+              <div style={{ marginBottom: 12 }}>
+                <label>اسم المورد</label>
+                <input
+                  type="text"
+                  value={importData.name}
+                  onChange={(e) => setImportData({ ...importData, name: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                />
+              </div>
+
+              {/* تاريخ الإيراد */}
+              <div style={{ marginBottom: 12 }}>
+                <label>تاريخ الإيراد</label>
+                <input
+                  type="date"
+                  value={importData.date}
+                  onChange={(e) => setImportData({ ...importData, date: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                />
+              </div>
+
+              {/* نوع الإيراد */}
+              <div style={{ marginBottom: 12 }}>
+                <label>نوع الإيراد</label>
+                <select
+                  value={importData.type}
+                  onChange={(e) => setImportData({ ...importData, type: e.target.value })}
+                  style={modalStyles.input}
+                  required
+                >
+                  <option value="">اختر النوع</option>
+                  <option value="طرود غذائية">طرود غذائية</option>
+                  <option value="طرود خضرة">طرود خضرة</option>
+                  <option value="طرود صحية">طرود صحية</option>
+                  <option value="مساعدات نقدية">مساعدات نقدية</option>
+                  <option value="غير ذلك">غير ذلك</option>
+                </select>
+              </div>
+
+              {/* يظهر فقط إذا كان نوع الإيراد "مساعدات نقدية" */}
+              {importData.type === "مساعدات نقدية" && (
+                <div style={{ marginBottom: 12 }}>
+                  <label>المبلغ</label>
+                  <input
+                    type="number"
+                    value={importData.amount}
+                    onChange={(e) => setImportData({ ...importData, amount: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
                 </div>
-              </form>
-            </div>
-          </div>
+              )}
+
+              {/* يظهر فقط إذا كان نوع الإيراد "غير ذلك" */}
+              {importData.type === "غير ذلك" && (
+                <div style={{ marginBottom: 12 }}>
+                  <label>حدد نوع الإيراد</label>
+                  <input
+                    type="text"
+                    value={importData.otherType || ""}
+                    onChange={(e) => setImportData({ ...importData, otherType: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
+                </div>
+              )}
+              {/* عدد الطرود يظهر فقط إذا كان النوع طرود */}
+              {importData.type.includes("طرود") && (
+                <div style={{ marginBottom: 12 }}>
+                  <label>عدد الطرود</label>
+                  <input
+                    type="number"
+                    value={importData.amount}
+                    onChange={(e) => setImportData({ ...importData, amount: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
+                </div>
+              )}
+
+              <div style={modalStyles.actions}>
+                <MotionButton label="إلغاء" onClick={closeModal} gradient="#ef4444" />
+                <MotionButton label="حفظ" gradient="#10b981" />
+              </div>
+            </form>
+          </motion.div>
         </div>
       )}
 
+
+      {/* نافذة تسجيل صادر */}
       {isExportModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h2 style={styles.modalTitle}>تسجيل صادر جديد</h2>
-            <div style={styles.modalContent}>
-              <form onSubmit={handleExportSubmit}>
-                {[
-                  { label: "البيان", key: "description", type: "text" },
-                  { label: "المبلغ", key: "amount", type: "number" },
-                  { label: "التاريخ", key: "date", type: "date" }
-                ].map((field, idx) => (
-                  <div key={idx} style={{ marginBottom: 15 }}>
-                    <label>{field.label}</label>
-                    <input
-                      type={field.type}
-                      value={exportData[field.key]}
-                      onChange={(e) => setExportData({ ...exportData, [field.key]: e.target.value })}
-                      style={styles.input}
-                      required
-                    />
-                  </div>
-                ))}
-
-                <div style={styles.buttonRow}>
-                  <button type="button" onClick={closeExportModal} style={styles.cancelButton}>إلغاء</button>
-                  <button type="submit" style={styles.saveButton}>حفظ</button>
+        <div style={modalStyles.overlay}>
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={modalStyles.modal}>
+            <h2 style={modalStyles.title}>تسجيل صادر جديد</h2>
+            <form onSubmit={handleExportSubmit}>
+              {[
+                { label: "البيان", key: "description", type: "text" },
+                { label: "المبلغ", key: "amount", type: "number" },
+                { label: "التاريخ", key: "date", type: "date" },
+              ].map((f, idx) => (
+                <div key={idx} style={{ marginBottom: 12 }}>
+                  <label>{f.label}</label>
+                  <input type={f.type} value={exportData[f.key]} onChange={(e) => setExportData({ ...exportData, [f.key]: e.target.value })} style={modalStyles.input} required />
                 </div>
-              </form>
-            </div>
-          </div>
+              ))}
+              <div style={modalStyles.actions}>
+                <MotionButton label="إلغاء" onClick={closeExportModal} gradient="#ef4444" />
+                <MotionButton label="حفظ" gradient="#10b981" />
+              </div>
+            </form>
+          </motion.div>
         </div>
       )}
-
-      <style>
-        {`
-          @media print {
-            body * {
-              visibility: hidden !important;
-            }
-            .print-section, .print-section * {
-              visibility: visible !important;
-            }
-            .print-section {
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              padding: 20px;
-              direction: rtl;
-              background: white;
-            }
-
-            .print-section table,
-            .print-section th,
-            .print-section td {
-              border: 1px solid black !important;
-              border-collapse: collapse !important;
-            }
-
-            .print-section th,
-            .print-section td {
-              padding: 8px;
-              text-align: center;
-              font-size: 14px;
-            }
-
-            .print-section thead {
-              background-color: #f0f0f0 !important;
-            }
-
-            .print-section tr:nth-child(even) {
-              background-color: #fafafa !important;
-            }
-
-            .print-section tr:nth-child(odd) {
-              background-color: white !important;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
 
-const Card = ({ icon, title, value }) => (
-  <div style={styles.card}>
+/** Components */
+const StatCard = ({ icon, title, value, gradient }) => (
+  <motion.div whileHover={{ scale: 1.04, translateY: -4 }} transition={{ type: "spring", stiffness: 260, damping: 18 }} style={{ background: gradient, padding: 20, borderRadius: 16, color: "white", minWidth: 260, textAlign: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}>
     <div>{icon}</div>
-    <h4 style={{ margin: "10px 0 5px", fontWeight: "bold" }}>{title}</h4>
-    <p style={{ fontSize: 18 ,fontWeight: "bold"}}>{value.toLocaleString("ar-EG")} شيكل</p>
+    <h4 style={{ margin: "12px 0 6px", fontWeight: 800 }}>{title}</h4>
+    <p style={{ fontSize: 24, fontWeight: 900, margin: 0 }}>
+      <CountUp end={toNumber(value)} duration={1.2} separator="," /> <span style={{ fontSize: 16 }}>شيكل</span>
+    </p>
+  </motion.div>
+);
+
+const MotionButton = ({ label, onClick, gradient }) => (
+  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} onClick={onClick} style={{ background: gradient, color: "#fff", padding: "10px 18px", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, margin: "0 5px" }}>
+    {label}
+  </motion.button>
+);
+
+const SectionCard = ({ title, icon, children }) => (
+  <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", border: "1px solid #eef2f7" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <div style={{ color: "#334155" }}>{icon}</div>
+      <h3 style={{ margin: 0, color: "#0f172a", fontSize: 18, fontWeight: 800 }}>{title}</h3>
+    </div>
+    {children}
   </div>
 );
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f0f4f8",
-    padding: 30,
-    fontFamily: "Arial, sans-serif",
-  },
-
-  pageTitle: {
-    textAlign: "center",
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 30,
-    color: "#2c3e50"
-  },
-  wrapper: {
-    maxWidth: 1000,
-    margin: "0 auto"
-  },
-  cardGroup: {
-    display: "flex",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 20,
-    marginBottom: 30
-  },
-  card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    width: 250,
-    textAlign: "center",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
-  },
-  buttonGroup: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 20,
-    marginBottom: 20
-  },
-  primaryButton: {
-    backgroundColor: "#3498db",
-    color: "#fff",
-    padding: "15px 30px",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 22,
-    fontWeight: "bold",
-    minWidth: 220,
-    flexGrow: 1,
-    maxWidth: "90%",
-    transition: "background 0.3s"
-  },
-  successButton: {
-    backgroundColor: "#2ecc71",
-    color: "#fff",
-    padding: "15px 30px",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 22,
-    fontWeight: "bold",
-    minWidth: 220,
-    flexGrow: 1,
-    maxWidth: "90%",
-    transition: "background 0.3s"
-  },
-
-  darkButton: {
-    backgroundColor: "#34495e",
-    color: "#fff",
-    padding: "15px 30px",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 22,
-    fontWeight: "bold",
-    minWidth: 220,
-    maxWidth: "90%",
-    flexGrow: 1,
-    transition: "background 0.3s",
-    marginTop: 20
-  },
-  cancelButton: {
-    backgroundColor: "#e74c3c",
-    color: "#fff",
-    padding: "10px 25px",
-    borderRadius: 8,
-    border: "none",
-    cursor: "pointer",
-  },
-  saveButton: {
-    backgroundColor: "#27ae60",
-    color: "white",
-    padding: "10px 25px",
-    borderRadius: 8,
-    border: "none",
-    cursor: "pointer",
-  },
-
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start", 
-    paddingTop: 50,         
-    zIndex: 9999,
-  },
-
-  modal: {
-    backgroundColor: "white",
-    padding: 30,
-    borderRadius: 10,
-    width: "90%",
-    maxWidth: 500,
-    maxHeight: "90vh",
-    overflowY: "auto",
-    direction: "rtl"
-  },
-  modalTitle: {
-    marginBottom: 20,
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#2c3e50"
-  },
-  modalContent: {
-    fontSize: 16,
-    color: "#34495e"
-  },
-  input: {
-    width: "100%",
-    padding: "8px 12px",
-    borderRadius: 5,
-    border: "1px solid #ccc",
-    fontSize: 16,
-    marginTop: 5
-  },
-  buttonRow: {
-    display: "flex",
-    justifyContent: "flex-start",
-    marginTop: 20,
-    gap: 15, 
-  },
+const ProgressRow = ({ label, value, total, color }) => {
+  const percent = Math.max(0, Math.min(100, (toNumber(value) / Math.max(1, toNumber(total))) * 100));
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <strong>{label}</strong>
+        <span>{percent.toFixed(1)}%</span>
+      </div>
+      <div style={{ background: "#f1f5f9", borderRadius: 999, overflow: "hidden", height: 14 }}>
+        <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.9 }} style={{ height: "100%", background: color }} />
+      </div>
+    </div>
+  );
 };
+
+const Divider = () => <div style={{ height: 1, background: "#e2e8f0", margin: "12px 0" }} />;
+const RowSummary = ({ label, value }) => (<div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800 }}><span>{label}</span><span>{value}</span></div>);
+const EmptyHint = ({ text }) => (<div style={{ padding: 12, borderRadius: 10, background: "#f8fafc", color: "#475569" }}>{text}</div>);
+
+// ستايل النوافذ
+const modalStyles = {
+  overlay: { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 },
+  modal: { background: "#fff", borderRadius: 12, padding: 20, width: "90%", maxWidth: 400, boxShadow: "0 10px 30px rgba(0,0,0,0.2)" },
+  title: { marginBottom: 16, fontSize: 20, fontWeight: 800 },
+  input: { width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ddd", marginTop: 4 },
+  actions: { display: "flex", justifyContent: "flex-end", marginTop: 16, gap: 10 },
+};
+
+const styles = {
+  page: { minHeight: "100vh", background: "linear-gradient(180deg, #f0f4f8, #eef2f7)", padding: 30 },
+  pageTitle: { textAlign: "center", fontSize: 28, fontWeight: 900, marginBottom: 24 },
+  cardGroup: { display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 18, marginBottom: 22 },
+  buttonGroup: { display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 14, marginBottom: 22 },
+  sectionsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 18, marginTop: 10 },
+};
+
+const palette = ["#3BA5EA", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444"];
+const parcelPalette = ["#F59E0B", "#F97316", "#10B981", "#06B6D4", "#8B5CF6"];
+const exportPalette = ["#10B981", "#06B6D4", "#3BA5EA", "#8B5CF6", "#F43F5E"];
 
 export default Dashboard;
