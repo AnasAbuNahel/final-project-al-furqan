@@ -38,7 +38,7 @@ const ResidentsList = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://final-project-al-furqan.onrender.com/api/residents', {
+      const res = await axios.get('https://final-project-al-furqan-2389.onrender.com/api/residents', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const sortedData = res.data.sort((a, b) => {
@@ -147,7 +147,7 @@ if (delegateFilterValue.length > 0) {
   const handleSave = async () => {
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`https://final-project-al-furqan.onrender.com/api/residents/${formData.id}`, formData, {
+      await axios.put(`https://final-project-al-furqan-2389.onrender.com/api/residents/${formData.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success('✅ تم حفظ التعديلات بنجاح.');
@@ -161,7 +161,7 @@ if (delegateFilterValue.length > 0) {
   const handleDelete = async (id) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`https://final-project-al-furqan.onrender.com/api/residents/${id}`, {
+      await axios.delete(`https://final-project-al-furqan-2389.onrender.com/api/residents/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success('تم الحذف بنجاح');
@@ -185,7 +185,7 @@ if (delegateFilterValue.length > 0) {
     data.append('file', file);
     const token = localStorage.getItem('token');
     axios
-      .post('https://final-project-al-furqan.onrender.com/api/residents/import', data, {
+      .post('https://final-project-al-furqan-2389.onrender.com/api/residents/import', data, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
