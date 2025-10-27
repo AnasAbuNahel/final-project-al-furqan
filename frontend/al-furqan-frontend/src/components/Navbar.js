@@ -32,7 +32,7 @@ const Navbar = () => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch("https://final-project-al-furqan.onrender.com/api/notifications", {
+        const res = await fetch("https://final-project-al-furqan-2389.onrender.com/api/notifications", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -42,7 +42,7 @@ const Navbar = () => {
         if (location.pathname === '/notifications') {
           setNotificationCount(0);
           localStorage.setItem('notificationCount', '0');
-          await fetch("https://final-project-al-furqan.onrender.com/api/notifications/mark-read", { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+          await fetch("https://final-project-al-furqan-2389.onrender.com/api/notifications/mark-read", { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         } else {
           setNotificationCount(newCount);
           localStorage.setItem('notificationCount', newCount.toString());
@@ -115,7 +115,7 @@ const Navbar = () => {
     if (!dropdownOpen) {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch("https://final-project-al-furqan.onrender.com/api/notifications", {
+        const res = await fetch("https://final-project-al-furqan-2389.onrender.com/api/notifications", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
