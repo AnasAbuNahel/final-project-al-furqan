@@ -118,7 +118,7 @@ useEffect(() => {
   }
 
   axios
-    .get("https://final-project-al-furqan.onrender.com/api/children", {
+    .get("https://final-project-al-furqan-2389.onrender.com/api/children", {
       headers: { Authorization: `Bearer ${token}` },
     })
     .then((res) => {
@@ -238,7 +238,7 @@ const handleImportExcel = async (event) => {
 
         try {
           await axios.post(
-            "https://final-project-al-furqan.onrender.com/api/children",
+            "https://final-project-al-furqan-2389.onrender.com/api/children",
             payload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -250,7 +250,7 @@ const handleImportExcel = async (event) => {
       }
 
       // إعادة تحميل البيانات بعد الاستيراد
-      const res = await axios.get("https://final-project-al-furqan.onrender.com/api/children", {
+      const res = await axios.get("https://final-project-al-furqan-2389.onrender.com/api/children", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const sortedData = res.data.sort((a, b) =>
@@ -288,7 +288,7 @@ const handleImportExcel = async (event) => {
   const handleSaveEdit = () => {
     const updatedChild = { ...currentChild };
     axios
-      .put(`https://final-project-al-furqan.onrender.com/api/children/${currentChild.id}`, updatedChild, {
+      .put(`https://final-project-al-furqan-2389.onrender.com/api/children/${currentChild.id}`, updatedChild, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -314,7 +314,7 @@ const handleDelete = (id) => {
 
   if (window.confirm("هل أنت متأكد من أنك تريد حذف هذا السجل؟")) {
     axios
-      .delete(`https://final-project-al-furqan.onrender.com/api/children/${id}`, {
+      .delete(`https://final-project-al-furqan-2389.onrender.com/api/children/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -852,7 +852,7 @@ const handleDelete = (id) => {
             };
 
             axios
-              .put(`https://final-project-al-furqan.onrender.com/api/children/${helpChild.id}`, updatedChild, {
+              .put(`https://final-project-al-furqan-2389.onrender.com/api/children/${helpChild.id}`, updatedChild, {
                 headers: { Authorization: `Bearer ${token}` },
               })
               .then(() => {
@@ -1057,3 +1057,4 @@ const handleDelete = (id) => {
 };
 
 export default ChildRegistration;
+
