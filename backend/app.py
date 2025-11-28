@@ -14,7 +14,7 @@ import pytz
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["https://final-project-al-furqan.vercel.app"])
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://db_al_furqan_final_project_xjzo_user:gpLbT96d9ygJMzdANaciMUwjLOdS8CqB@dpg-d3vlmlv5r7bs738b35f0-a/db_al_furqan_final_project_xjzo'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://al_furqan_anas_new_user:jOKowS3ck6GovJtl1m0tLLTK1E9WvK8T@dpg-d4l0ehshg0os73b0ska0-a/al_furqan_anas_new'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'furqan-secret-key'
 
