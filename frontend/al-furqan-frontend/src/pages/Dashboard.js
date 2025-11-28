@@ -9,7 +9,7 @@ import CountUp from "react-countup";
 import { motion } from "framer-motion";
 
 // إعداد Axios
-axios.defaults.baseURL = "https://final-project-al-furqan-2389.onrender.com";
+axios.defaults.baseURL = "https://final-project-al-furqan-rj1r.onrender.com";
 axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
 
 // Utilities
@@ -134,7 +134,7 @@ const Dashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://final-project-al-furqan-2389.onrender.com/api/imports", importData);
+      const res = await axios.post("https://final-project-al-furqan-rj1r.onrender.com/api/imports", importData);
       setImports((prev) => [...prev, res.data]);
       toast.success("تم حفظ الإيراد بنجاح");
       closeModal();
@@ -147,7 +147,7 @@ const Dashboard = () => {
   const handleExportSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://final-project-al-furqan-2389.onrender.com/api/exports", exportData);
+      const res = await axios.post("https://final-project-al-furqan-rj1r.onrender.com/api/exports", exportData);
       setExports((prev) => [...prev, res.data]);
       toast.success("تم حفظ الصادر بنجاح");
       closeExportModal();
