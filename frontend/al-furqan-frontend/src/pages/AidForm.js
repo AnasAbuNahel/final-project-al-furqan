@@ -18,7 +18,7 @@ const AidForm = () => {
   const userRole = decoded?.role; 
 
   useEffect(() => {
-    axios.get("https://final-project-al-furqan-2389.onrender.com/api/residents", {
+    axios.get("https://final-project-al-furqan-rj1r.onrender.com/api/residents", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
@@ -52,7 +52,7 @@ const AidForm = () => {
 
     if (userRole !== 'admin' && proposedAidTypes.includes(aidType)) {
       try {
-        const response = await axios.get(`https://final-project-al-furqan-2389.onrender.com/api/aids?resident_id=${selectedId}`, {
+        const response = await axios.get(`https://final-project-al-furqan-rj1r.onrender.com/api/aids?resident_id=${selectedId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -73,7 +73,7 @@ const AidForm = () => {
     }
 
     try {
-      await axios.post('https://final-project-al-furqan-2389.onrender.com/api/aids', {
+      await axios.post('https://final-project-al-furqan-rj1r.onrender.com/api/aids', {
         resident_id: selectedId,
         aid_type: finalAidType,
         date: aidDate,
