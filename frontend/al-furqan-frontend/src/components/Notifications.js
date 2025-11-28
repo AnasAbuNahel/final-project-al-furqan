@@ -61,7 +61,7 @@ const NotificationsPage = () => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://final-project-al-furqan-2389.onrender.com/api/notifications", {
+      const res = await axios.get("https://final-project-al-furqan-rj1r.onrender.com/api/notifications", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
