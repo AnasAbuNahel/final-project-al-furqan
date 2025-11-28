@@ -18,7 +18,7 @@ const AidHistory = () => {
 
   useEffect(() => {
     axios
-      .get("https://final-project-al-furqan-2389.onrender.com/api/aids", {
+      .get("https://final-project-al-furqan-rj1r.onrender.com/api/aids", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -105,7 +105,7 @@ const handleImportExcel = async (event) => {
 
         try {
           const res = await axios.get(
-            `https://final-project-al-furqan-2389.onrender.com/api/residents/search?name=${encodeURIComponent(الاسم)}&id=${الهوية}`,
+            `https://final-project-al-furqan-rj1r.onrender.com/api/residents/search?name=${encodeURIComponent(الاسم)}&id=${الهوية}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -128,7 +128,7 @@ const handleImportExcel = async (event) => {
           }
 
           await axios.post(
-            "https://final-project-al-furqan-2389.onrender.com/api/aids",
+            "https://final-project-al-furqan-rj1r.onrender.com/api/aids",
             {
               resident_id: resident.id,
               aid_type: نوع_المساعدة,
@@ -145,7 +145,7 @@ const handleImportExcel = async (event) => {
       }
 
       try {
-        const res = await axios.get("https://final-project-al-furqan-2389.onrender.com/api/aids", {
+        const res = await axios.get("https://final-project-al-furqan-rj1r.onrender.com/api/aids", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const sortedData = res.data.sort((a, b) => {
@@ -171,7 +171,7 @@ const handleImportExcel = async (event) => {
   const handleDelete = (id) => {
     if (window.confirm("هل أنت متأكد من أنك تريد حذف هذا السجل؟")) {
       axios
-        .delete(`https://final-project-al-furqan-2389.onrender.com/api/aids/${id}`, {
+        .delete(`https://final-project-al-furqan-rj1r.onrender.com/api/aids/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -205,7 +205,7 @@ const handleImportExcel = async (event) => {
     };
 
     axios
-      .put(`https://final-project-al-furqan-2389.onrender.com/api/aids/${currentAid.id}`, updatedAid, {
+      .put(`https://final-project-al-furqan-rj1r.onrender.com/api/aids/${currentAid.id}`, updatedAid, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
