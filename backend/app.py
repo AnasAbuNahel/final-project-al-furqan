@@ -615,22 +615,39 @@ def delete_all_residents():
 def manage_aids():
     if request.method == 'POST':
         data = request.get_json() or {}
-        resident = Resident.query.filter_by(id=data.get('resident_id'), tenant_id=request.user['tenant_id']).first()
+        resident = Resident.query.filter_by(
+            id=data.get('resident_id'),
+            tenant_id=request.user['tenant_id']
+        ).first()
+
         if not resident:
             return jsonify({'error': 'المستفيد غير موجود'}), 404
 
-        aid = Aid(resident_id=resident.id, aid_type=data.get('aid_type'), date=data.get('date'), tenant_id=request.user['tenant_id'])
+        aid = Aid(
+            resident_id=resident.id,
+            aid_type=data.get('aid_type'),
+            date=data.get('date'),
+            tenant_id=request.user['tenant_id']
+        )
         resident.has_received_aid = True
 
         db.session.add(aid)
         db.session.commit()
 
-        log_action(request.user, f"اضافة مساعدة ({aid.aid_type}) للمستفيد", resident.husband_name)
-        return jsonify({'message': 'تمت إضافة المساعدة بنجاح'})
+        log_action(
+            request.user,
+            f"اضافة مساعدة ({aid.aid_type}) للمستفيد",
+            resident.husband_name
+        )
 
-    aids = Aid.query.join(Resident).filter(Resident.tenant_id == request.user['tenant_id']).all()
+        # أعد السجل كامل مع بيانات المقيم
+        return jsonify(aid.serialize()), 201
+
+    aids = Aid.query.join(Resident)\
+        .filter(Resident.tenant_id == request.user['tenant_id'])\
+        .all()
     return jsonify([a.serialize() for a in aids])
-
+    
 # ====== استيراد ملف اكسل المساعدات (مُحسّن باستخدام pandas) ======
 @app.route('/importt_excel', methods=['POST'])
 @login_required
