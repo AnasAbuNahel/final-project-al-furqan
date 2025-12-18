@@ -643,9 +643,10 @@ def manage_aids():
         # أعد السجل كامل مع بيانات المقيم
         return jsonify(aid.serialize()), 201
 
-    aids = Aid.query.join(Resident)\
-        .filter(Resident.tenant_id == request.user['tenant_id'])\
-        .all()
+    aids = Aid.query.join(Resident).filter(
+        Aid.tenant_id == request.user['tenant_id'],
+        Resident.tenant_id == request.user['tenant_id']
+    ).all()
     return jsonify([a.serialize() for a in aids])
     
 # ====== استيراد ملف اكسل المساعدات (مُحسّن باستخدام pandas) ======
