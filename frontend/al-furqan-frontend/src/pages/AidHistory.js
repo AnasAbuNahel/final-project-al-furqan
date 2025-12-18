@@ -68,6 +68,7 @@ const handleImportExcel = async (event) => {
 
   const reader = new FileReader();
 
+  // التعامل مع حالة فشل القراءة
   reader.onerror = (err) => {
     console.error("فشل في قراءة الملف: ", err);
     toast.error("فشل في قراءة الملف. تأكد من أن الملف بصيغة Excel الصحيحة.");
@@ -80,18 +81,23 @@ const handleImportExcel = async (event) => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       let jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+      // التحقق من الأعمدة وتنسيق التواريخ
       jsonData = jsonData.map(row => {
+        // التحقق من أن "تاريخ_المساعدة" هو رقم تسلسلي في Excel وتحويله إلى تاريخ
         if (row["تاريخ_المساعدة"] && typeof row["تاريخ_المساعدة"] === "number") {
+          // تحويل الرقم التسلسلي إلى تاريخ
           row["تاريخ_المساعدة"] = XLSX.SSF.format('yyyy-mm-dd', row["تاريخ_المساعدة"]);
         }
         return row;
       });
 
+      // تحقق من الأعمدة
       if (!jsonData.length) {
         toast.warn("الملف فارغ أو التنسيق غير صحيح.");
         return;
       }
 
+      // التأكد من أن الأعمدة في الملف صحيحة
       const requiredColumns = ["الاسم", "الهوية", "نوع_المساعدة", "تاريخ_المساعدة"];
       const missingColumns = requiredColumns.filter(column => !jsonData[0].hasOwnProperty(column));
 
@@ -100,6 +106,7 @@ const handleImportExcel = async (event) => {
         return;
       }
 
+      // بقية الكود لتخزين البيانات واستيرادها كما هو
       for (const row of jsonData) {
         const { الاسم, الهوية, نوع_المساعدة, تاريخ_المساعدة } = row;
 
@@ -144,6 +151,7 @@ const handleImportExcel = async (event) => {
         }
       }
 
+      // إعادة تحميل البيانات بعد الاستيراد
       try {
         const res = await axios.get("https://final-project-al-furqan-rj1r.onrender.com/api/aids", {
           headers: { Authorization: `Bearer ${token}` },
